@@ -195,7 +195,7 @@ export const approveRequest = async (req, res) => {
 			return res.status(400).json({ message: "Invalid request" });
 		}
 
-		const group = joinRequest.group;
+		const group = joinRequest.group as any;
 		joinRequest.status = action === "approve" ? "approved" : "rejected";
 
 		if (action === "approve") {

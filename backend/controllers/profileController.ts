@@ -32,7 +32,7 @@ export const updateProfile = async (req, res) => {
 	try {
 		const { userName, email, password, confirmPassword } = req.body;
 		console.log(req.user);
-		let updateFields = {};
+		let updateFields: any = {};
 		if (userName !== req.user.userName) {
 			if (await User.findOne({ userName }))
 				return res.status(400).json({ message: "Username already exists" });

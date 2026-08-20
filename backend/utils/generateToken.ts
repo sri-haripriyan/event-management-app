@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken";
+import logger from "./logger.js";
+import { Response } from "express";
 
-const generateToken = (res, userId) => {
+const generateToken = (res: Response, userId: string) => {
     try {
         const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
             expiresIn: "10d",
@@ -9,7 +11,7 @@ const generateToken = (res, userId) => {
         res.cookie("auth", token, {
             httpOnly: true,
             secure: false,
-            sameSite: "Lax",
+            sameSite: "lax",
             maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days in milliseconds
         });
 

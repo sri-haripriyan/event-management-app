@@ -12,8 +12,8 @@ const storage = new CloudinaryStorage({
 	cloudinary,
 	params: {
 		folder: "profile_pictures",
-		allowec_formats: ["jpg", "png", "jpeg"],
-	},
+		allowed_formats: ["jpg", "png", "jpeg"],
+	} as any,
 });
 const upload = multer({ storage });
 export { upload, cloudinary };

@@ -4,7 +4,7 @@ const protect = async (req, res, next) => {
   const token = req.cookies.auth;
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
       const user = await User.findById(decoded.userId);
       if (user) {
         req.user = user;

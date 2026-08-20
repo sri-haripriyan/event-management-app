@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Comment from "../models/commentModel.js";
 import Event from "../models/eventModel.js";
+import logger from "../utils/logger.js";
 export const createComment = async (req, res, next) => {
 	try {
 		const { comment, event, user } = req.body;
