@@ -81,6 +81,6 @@ app.use((err, req, res, next) => {
 // Start Server
 server.listen(process.env.PORT || 5000, () => {
   logger.info(
-    `🚀 Server running on http://localhost:${process.env.PORT || 5000}`
+    `Server running on http://localhost:${process.env.PORT || 5000}`
   );
 });

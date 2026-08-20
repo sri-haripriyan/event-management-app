@@ -17,7 +17,7 @@ export const sendEmailWithQRCode = async (applicationId) => {
 	try {
 		const application = await Application.findById(applicationId)
 			.populate("userId", "userName email")
-			.populate("eventId", "title");
+			.populate("eventId", "title") as any;
 		const qrCodeBase64 = await generateQRCode(
 			`${application.eventId._id.toString()}==${application._id}`
 		);

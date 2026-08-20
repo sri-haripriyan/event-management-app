@@ -24,7 +24,7 @@ export const signUp = async (req, res) => {
       password: hashedPassword,
     });
 
-    generateToken(res, user._id);
+    generateToken(res, user._id.toString());
     const savedUser = await user.save();
     if (user) {
       res.status(201).json({
@@ -34,7 +34,7 @@ export const signUp = async (req, res) => {
         profile_image_url: user.profile_image_url,
       });
     } else {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: "Invalid user data" });
     }
   } catch (error) {
     logger.error("Signup controller error" + error.message);
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
       const event = await Event.findOne({ userId: userExists._id });
       const isHost = event ? true : false;
 
-      generateToken(res, userExists._id);
+      generateToken(res, userExists._id.toString());
       res.status(200).json({
         _id: userExists._id,
         userName: userExists.userName,

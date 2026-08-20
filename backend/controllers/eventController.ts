@@ -122,7 +122,7 @@ export const updateEvent = async (req, res) => {
     }
     event.title = req.body.title || event.title;
     event.description = req.body.description || event.description;
-    event.userId = req.user._id || event.user;
+    event.userId = req.user._id || event.userId;
     event.technical = req.body.technical || event.technical;
     event.nonTechnical = req.body.nonTechnical || event.nonTechnical;
     event.startTime = req.body.startTime || event.startTime;
