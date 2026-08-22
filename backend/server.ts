@@ -55,13 +55,13 @@ app.use(
 );
 
 // Routes
-app.use(express.static(path.join(__dirname, "dist")));
+app.use(express.static(path.join(process.cwd(), "dist")));
 
 app.get("*", (req, res, next) => {
   if (req.originalUrl.startsWith("/api")) {
     return next();
   }
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  res.sendFile(path.join(process.cwd(), "dist", "index.html"));
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
