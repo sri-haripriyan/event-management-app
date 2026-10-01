@@ -36,8 +36,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(urlencoded({ extended: true }));
 
-connectDB();
-
 // Morgan - Custom Console Logger
 app.use(
   morgan(
@@ -78,9 +76,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error" });
 });
 
-// Start Server
-server.listen(process.env.PORT || 5000, () => {
-  logger.info(
-    `Server running on http://localhost:${process.env.PORT || 5000}`
-  );
+// Connect to Database and then Start Server
+connectDB().then(() => {
+  server.listen(process.env.PORT || 5000, () => {
+    logger.info(
+      `Server running on http://localhost:${process.env.PORT || 5000}`
+    );
+  });
 });
