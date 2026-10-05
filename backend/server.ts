@@ -26,9 +26,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middleware Setup
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:5000",
+  "http://127.0.0.1:5000",
+  "https://ems-frontend-bay-beta.vercel.app",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
+      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true, // if using cookies or authorization headers
   })
 );

@@ -10,7 +10,7 @@ const Header = ({ showSearch, searchTerm, setSearchTerm }) => {
   const location = useLocation();
   const [hovered, setHovered] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [role, setRole] = useState("member");
 
   const { data } = useQuery({
@@ -43,17 +43,14 @@ const Header = ({ showSearch, searchTerm, setSearchTerm }) => {
   const { mutate } = useMutation({
     mutationFn: signout,
     onSuccess: () => {
+      setUser(null);
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
       navigate("/events");
     },
   });
   const handleLogout = () => {
-    mutate(null, {
-      onSuccess: () => {
-        localStorage.removeItem("token");
-        navigate("/events");
-      },
-    });
+    mutate();
   };
 
   return (

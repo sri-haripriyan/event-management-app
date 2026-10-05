@@ -8,11 +8,11 @@ import { getRandomColor } from "../utils/color";
 
 export default function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user: info } = useAuth();
+  const { user: info, setUser } = useAuth();
 
   const user = {
-    name: info.userName,
-    email: info.email,
+    name: info?.userName,
+    email: info?.email,
     avatar: "https://i.pravatar.cc/150",
   };
   const navigate = useNavigate();
@@ -20,19 +20,14 @@ export default function UserMenu() {
   const { mutate, isPending } = useMutation({
     mutationFn: signout,
     onSuccess: () => {
+      setUser(null);
       localStorage.removeItem("user");
+      localStorage.removeItem("token");
       navigate("/login");
     },
-   
   });
   const handleLogout = () => {
-    mutate(null, {
-      onSuccess: () => {
-        localStorage.removeItem("token");
-        navigate("/login");
-      },
-      
-    });
+    mutate();
   };
 
   return (
