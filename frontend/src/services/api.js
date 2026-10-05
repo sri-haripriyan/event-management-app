@@ -1,5 +1,9 @@
 import axios from "axios";
 const BASE_URL = import.meta.env.VITE_BACKEND_URL;
+
+// Send httpOnly cookies with all API requests
+axios.defaults.withCredentials = true;
+
 // Fetch blogs
 export const fetchBlogs = async ({ queryKey }) => {
   const [key, page] = queryKey;

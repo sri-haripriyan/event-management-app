@@ -20,7 +20,6 @@ const Signup = () => {
       SignupData({ userName, email, password }),
     onSuccess: (data) => {
       toast.success("Signup Successful");
-      localStorage.setItem("token", JSON.stringify(data));
       setUser(data);
       setuserName("");
       setPassword("");

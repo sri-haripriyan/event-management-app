@@ -15,7 +15,6 @@ const Login = () => {
     mutationFn: ({ userName, password }) => logindata({ userName, password }),
     onSuccess: (data) => {
       toast.success("Login Successful");
-      localStorage.setItem("token", JSON.stringify(data));
       setUser(data);
       setuserName("");
       setPassword("");

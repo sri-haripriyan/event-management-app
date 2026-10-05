@@ -70,8 +70,15 @@ export const login = async (req, res) => {
 
 export const logout = async (req, res) => {
   try {
+    const isProductionHttps =
+      process.env.NODE_ENV === "production" &&
+      Boolean(process.env.FRONTEND_URL?.startsWith("https://"));
+
     res.cookie("auth", "", {
       httpOnly: true,
+      path: "/",
+      sameSite: isProductionHttps ? "none" : "lax",
+      secure: isProductionHttps,
       expires: new Date(0),
     });
     res.status(200).json({ message: "Logged out successfully" });
