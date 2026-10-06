@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema(
     profile_image_url: {
       type: String,
     },
+    profile_file_id: {
+      type: String,
+    },
     isHost: { type: Boolean },
   },
   { timestamps: true }

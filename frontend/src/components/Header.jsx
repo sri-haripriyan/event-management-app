@@ -174,15 +174,13 @@ const Header = ({ showSearch, searchTerm, setSearchTerm }) => {
             ))}
             {user ? (
               <li className="mt-8">
-                <button
-                  className="px-8 py-3 bg-red-650 hover:bg-red-650 text-white rounded-xl font-medium transition duration-200 shadow-lg shadow-red-950/30"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    handleLogout();
-                  }}
+                <Link
+                  to="/profile"
+                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium transition duration-200 inline-block shadow-lg"
+                  onClick={() => setMenuOpen(false)}
                 >
-                  Sign Out
-                </button>
+                  My Profile
+                </Link>
               </li>
             ) : (
               <li className="mt-6">
