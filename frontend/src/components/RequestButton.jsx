@@ -37,10 +37,10 @@ const RequestButton = () => {
   };
   return (
     <div className="w-full">
-      <form action="" onSubmit={handleSubmit} className="w-full flex gap-2">
+      <form onSubmit={handleSubmit} className="w-full flex gap-2 items-center">
         <select
           onChange={handleChange}
-          className=" p-2 rounded-md bg-white text-black"
+          className="flex-1 p-2.5 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface text-sm outline-none"
           defaultValue={""}>
           <option value="" disabled>
             Select an Event
@@ -52,14 +52,14 @@ const RequestButton = () => {
           ))}
         </select>
         {isPending ? (
-          <div className="p-2 w-12 rounded-lg bg-zinc-500">
+          <div className="p-2 w-12 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-center">
             <Spinner size="sm" />
           </div>
         ) : (
           <button
             type="submit"
-            className="p-2 bg-blue-500 text-white rounded-lg">
-            join 
+            className="px-5 py-2.5 bg-primary-container hover:bg-surface-tint text-on-primary rounded-xl font-medium text-sm transition duration-200 shadow-sm active:scale-[0.98]">
+            Join 
           </button>
         )}
       </form>

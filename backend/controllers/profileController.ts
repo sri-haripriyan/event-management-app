@@ -223,7 +223,7 @@ export const getPanelData = async (req: any, res: any) => {
 				reference: refCode,
 				status: item.status || "Attended",
 				isAttended: item.isAttended ?? true,
-				location: ev.location || (ev.nonTechnical?.length ? "Lumina Hall Studio" : "Online / Virtual"),
+				location: ev.location || (ev.nonTechnical?.length ? "ACN. Hall Studio" : "Online / Virtual"),
 				createdAt: item.createdAt || ev.createdAt,
 			};
 		});

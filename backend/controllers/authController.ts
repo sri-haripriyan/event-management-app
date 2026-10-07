@@ -57,6 +57,7 @@ export const login = async (req, res) => {
         email: userExists.email,
         groups: userExists.groups,
         eventsApplied: userExists.eventsApplied,
+        profile_image_url: userExists.profile_image_url,
         isHost,
       });
     } else {

@@ -45,13 +45,13 @@ const RequestComponent = () => {
         </div>
       )}
       <div className="flex items-center p-2 gap-2">
-        <label htmlFor="sortBy" className="text-slate-100">
+        <label htmlFor="sortBy" className="text-on-surface text-sm font-medium">
           Sort By:
         </label>
         <select
           id="sortBy"
           name="sortBy"
-          className="text-slate-100 bg-zinc-600 px-3 py-1 rounded border border-zinc-400 cursor-pointer "
+          className="text-on-surface bg-surface-container-low px-3 py-1.5 rounded-xl border border-outline-variant/40 cursor-pointer text-sm outline-none"
           onChange={handleChange}>
           <option value="all">All</option>
           <option value="approved">Approved</option>
@@ -60,26 +60,28 @@ const RequestComponent = () => {
         </select>
       </div>
 
-      <table className="min-w-full border border-zinc-800 text-zinc-200">
-        <thead className="bg-zinc-900">
-          <tr>
-            <th className="px-4 py-2">User Name</th>
-            <th className="px-4 py-2">Email</th>
-            <th className="px-4 py-2">Group</th>
-            <th className="px-4 py-2">Status</th>
-            <th className="px-4 py-2">Created At</th>
-            <th className="px-4 py-2">Action</th>
-          </tr>
-        </thead>
+      <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 bg-surface-container-lowest shadow-sm">
+        <table className="min-w-full text-on-surface text-sm">
+          <thead className="bg-surface-container-low border-b border-outline-variant/30 text-on-surface font-semibold">
+            <tr>
+              <th className="px-4 py-3">User Name</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Group</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Created At</th>
+              <th className="px-4 py-3">Action</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {sortBy === "all"
-            ? data?.map((item) => <TableRow key={item?._id} data={item} />)
-            : filteredData?.map((item) => (
-                <TableRow key={item?._id} data={item} />
-              ))}
-        </tbody>
-      </table>
+          <tbody>
+            {sortBy === "all"
+              ? data?.map((item) => <TableRow key={item?._id} data={item} />)
+              : filteredData?.map((item) => (
+                  <TableRow key={item?._id} data={item} />
+                ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

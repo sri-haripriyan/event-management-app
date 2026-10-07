@@ -1,202 +1,373 @@
-import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+/* eslint-disable react/prop-types */
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
-import UserMenu from "./AvatarMenu";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { fetchRoles, signout } from "../services/api";
-import { FiSearch } from "react-icons/fi";
+import { getPanelData } from "../services/api";
 
-const Header = ({ showSearch, searchTerm, setSearchTerm }) => {
+const Header = ({
+  activeTab,
+  showSearch = true,
+  searchTerm: controlledSearchTerm,
+  setSearchTerm: setControlledSearchTerm,
+}) => {
   const location = useLocation();
-  const [hovered, setHovered] = useState(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const { user, setUser } = useAuth();
-  const [role, setRole] = useState("member");
-
-  const { data } = useQuery({
-    queryKey: ["role", user?.id],
-    queryFn: fetchRoles,
-    enabled: !!user,
-  });
-
-  useEffect(() => {
-    if (data) {
-      setRole(data);
-    }
-  }, [data]);
-
-  const navLinks = [
-    { label: "Events", href: "/events" },
-    { label: "About", href: "/about" },
-  ];
-
-  if (role?.host) {
-    navLinks.push({ label: "Dashboard", href: "/dashboard" });
-  } else if (role?.moderator) {
-    navLinks.push({ label: "Request", href: "/request" });
-  }
-  if (user) {
-    navLinks.push({ label: "Chats", href: "/chats" });
-  }
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [internalSearchValue, setInternalSearchValue] = useState(
+    searchParams.get("search") || ""
+  );
 
-  const { mutate } = useMutation({
-    mutationFn: signout,
-    onSuccess: () => {
-      setUser(null);
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      navigate("/events");
-    },
-  });
-  const handleLogout = () => {
-    mutate();
+  const isControlled = controlledSearchTerm !== undefined && typeof setControlledSearchTerm === "function";
+  const currentSearchValue = isControlled ? controlledSearchTerm : internalSearchValue;
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    if (isControlled) {
+      setControlledSearchTerm(val);
+    } else {
+      setInternalSearchValue(val);
+    }
   };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const query = currentSearchValue.trim();
+    if (location.pathname === "/events") {
+      if (isControlled) {
+        setControlledSearchTerm(query);
+      }
+    } else {
+      if (query) {
+        navigate(`/events?search=${encodeURIComponent(query)}`);
+      } else {
+        navigate("/events");
+      }
+    }
+    setMobileMenuOpen(false);
+  };
+
+  // Keep internal state updated if query param changes
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q !== null && !isControlled) {
+      setInternalSearchValue(q);
+    }
+  }, [searchParams, isControlled]);
+
+  // Determine active nav item
+  const currentPath = location?.pathname || "";
+  const isEventsActive =
+    activeTab === "events" ||
+    (!activeTab && (currentPath === "/" || currentPath === "/events"));
+  const isProfileActive =
+    activeTab === "profile" || (!activeTab && currentPath === "/profile");
+  const isCommunityActive =
+    activeTab === "chats" || (!activeTab && currentPath === "/chats");
+  const isAboutActive =
+    activeTab === "about" || (!activeTab && currentPath === "/about");
+
+  // Fetch real-time user profile data (including uploaded profile image)
+  const { data: panelData } = useQuery({
+    queryKey: ["profile-panel", user?._id],
+    queryFn: getPanelData,
+    enabled: !!user?._id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const currentUser = panelData?.user || user;
+  const avatarUrl =
+    currentUser?.profile_image_url ||
+    user?.profile_image_url ||
+    null;
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-slate-950/75 backdrop-blur-md transition-all duration-300 text-white">
-      <nav className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center w-full">
-        {/* Left Side: Brand Logo & Links */}
-        <div className="flex items-center gap-12">
-          <Link to="/events" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-[0_0_15px_rgba(168,85,247,0.3)] transition-transform duration-300 group-hover:scale-105">
-              A
-            </div>
-            <span className="text-xl font-bold tracking-widest text-white group-hover:text-purple-400 transition-colors">ACN.E</span>
-          </Link>
+    <>
+      <header className="fixed top-0 left-0 right-0 w-full z-50 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high/60">
+        <div className="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between gap-space-md">
+          {/* Logo & Navigation */}
+          <div className="flex items-center gap-space-lg">
+            <Link to="/events" className="flex items-center gap-space-sm group">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-container to-surface-tint flex items-center justify-center text-white font-headline-sm font-extrabold shadow-sm group-hover:scale-105 transition-transform">
+                <span className="material-symbols-outlined text-lg">auto_awesome</span>
+              </div>
+              <span className="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">
+                ACN.
+              </span>
+            </Link>
 
-          {/* Desktop Navigation Links */}
-          <ul className="flex items-center gap-8 max-lg:hidden">
-            {navLinks.map((item) => (
-              <li
-                key={item?.label}
-                onMouseEnter={() => setHovered(item.href)}
-                onMouseLeave={() => setHovered(null)}
-                className="relative py-1"
-              >
-                <Link
-                  to={item?.href}
-                  className={`text-[15px] font-medium transition-colors duration-200 ${
-                    location?.pathname === item?.href ? "text-white border-b-2 border-purple-500 pb-1" : "text-slate-300 hover:text-white"
-                  }`}
-                >
-                  {item?.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Right Side: Search, Notifications & Avatar */}
-        <div className="flex items-center gap-4">
-          {showSearch && (
-            <div className="relative w-40 sm:w-56 md:w-64 max-md:hidden">
-              <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
-              <input
-                type="text"
-                placeholder="Search events..."
-                value={searchTerm || ""}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-900/50 border border-slate-800/80 focus:border-purple-500 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white outline-none transition placeholder:text-slate-500 focus:ring-1 focus:ring-purple-500/20"
-              />
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            {user && (
-              <button className="relative text-slate-400 hover:text-white p-1.5 max-md:hidden">
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping"></span>
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </button>
-            )}
-
-            {user ? (
-              <UserMenu />
-            ) : (
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-space-sm">
               <Link
-                to="/login"
-                className="text-[14px] font-medium px-4 py-1.5 border border-purple-500/30 text-purple-300 hover:bg-gradient-to-r hover:from-purple-600 hover:to-indigo-600 hover:text-white rounded-full transition duration-200"
+                to="/events"
+                className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isEventsActive
+                    ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
               >
-                Login
+                Events
               </Link>
+              <Link
+                to="/events"
+                className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
+              >
+                Discover
+              </Link>
+
+              {/* My Tickets, Schedule, and Community are only visible when user is logged in */}
+              {user && (
+                <>
+                  <Link
+                    to="/profile"
+                    className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isProfileActive
+                        ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                      }`}
+                  >
+                    My Tickets
+                  </Link>
+                  <Link
+                    to="/events"
+                    className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
+                  >
+                    Schedule
+                  </Link>
+                  <Link
+                    to="/chats"
+                    className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isCommunityActive
+                        ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                      }`}
+                  >
+                    Community
+                  </Link>
+                </>
+              )}
+
+              <Link
+                to="/about"
+                className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isAboutActive
+                    ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
+              >
+                About
+              </Link>
+            </nav>
+          </div>
+
+          {/* Right Header Elements */}
+          <div className="flex items-center gap-space-md">
+            {/* Search Input */}
+            {showSearch && (
+              <form onSubmit={handleSearchSubmit} className="relative hidden sm:flex items-center">
+                <span className="material-symbols-outlined absolute left-3 text-outline pointer-events-none text-lg">
+                  search
+                </span>
+                <input
+                  value={currentSearchValue}
+                  onChange={handleSearchChange}
+                  className="w-56 md:w-64 pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest transition-all border border-transparent focus:border-outline-variant"
+                  placeholder="Search events, spaces, organizers..."
+                  type="text"
+                />
+              </form>
             )}
 
-            {/* Mobile Burger Menu */}
+            {/* Notification Bell */}
             <button
-              className="text-slate-300 hover:text-white p-2 text-xl hidden max-lg:block"
-              onClick={() => setMenuOpen(!menuOpen)}
+              className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+              type="button"
+              aria-label="Notifications"
             >
-              ☰
+              <span className="material-symbols-outlined text-xl">notifications</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+            </button>
+
+            {/* Top Avatar Circle or Login Button */}
+            <div className="flex items-center gap-space-sm pl-2">
+              {user ? (
+                <Link
+                  to="/profile"
+                  className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary-container/20 hover:ring-primary-container transition-all flex items-center justify-center shrink-0 bg-surface-container-high"
+                  title={currentUser?.userName || "Profile"}
+                >
+                  {avatarUrl ? (
+                    <img
+                      alt={currentUser?.userName || "Profile"}
+                      className="w-full h-full object-cover"
+                      src={avatarUrl}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary-container text-white font-bold text-xs select-none">
+                      {(currentUser?.userName || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center font-label-md text-label-md font-semibold px-4 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-surface-tint shadow-sm transition-all active:scale-95"
+                >
+                  Log in
+                </Link>
+              )}
+            </div>
+
+            {/* Mobile Menu Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+              aria-label="Toggle menu"
+            >
+              <span className="material-symbols-outlined text-2xl">
+                {mobileMenuOpen ? "close" : "menu"}
+              </span>
             </button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Sliding Mobile Menu */}
-      <div
-        className={`fixed inset-0 z-50 h-screen w-screen bg-slate-950/98 backdrop-blur-lg text-white p-6 transform transition-transform duration-300 ease-in-out ${
-          menuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <button
-          className="text-2xl font-bold absolute top-5 right-6 text-slate-400 hover:text-white"
-          onClick={() => setMenuOpen(false)}
-        >
-          ✕
-        </button>
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 top-16 z-40 bg-surface/95 backdrop-blur-xl border-b border-surface-container-high p-6 flex flex-col gap-6 lg:hidden animate-fade-in shadow-xl">
+          {/* Mobile Search */}
+          {showSearch && (
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg">
+                search
+              </span>
+              <input
+                value={currentSearchValue}
+                onChange={handleSearchChange}
+                className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest border border-outline-variant/30"
+                placeholder="Search events, spaces, organizers..."
+                type="text"
+              />
+            </form>
+          )}
 
-        <div className="flex flex-col justify-center items-center h-full gap-8">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-lg">
-              A
-            </div>
-            <span className="text-2xl font-bold tracking-widest text-white">ACN.E</span>
-          </div>
+          {/* Mobile Navigation Links */}
+          <nav className="flex flex-col gap-2">
+            <Link
+              to="/events"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isEventsActive
+                  ? "bg-primary-container text-on-primary font-semibold"
+                  : "text-on-surface-variant hover:bg-surface-container"
+                }`}
+            >
+              <span>Events</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+            <Link
+              to="/events"
+              onClick={() => setMobileMenuOpen(false)}
+              className="font-label-md text-label-md px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors flex items-center justify-between"
+            >
+              <span>Discover</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
 
-          <ul className="flex flex-col items-center gap-6">
-            {navLinks.map((item) => (
-              <li key={item?.label} className="text-xl">
-                <Link
-                  to={item?.href}
-                  className={`capitalize transition-colors ${
-                    location?.pathname === item?.href
-                      ? "text-purple-400 font-semibold"
-                      : "text-slate-300 hover:text-white"
-                  }`}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {item?.label}
-                </Link>
-              </li>
-            ))}
-            {user ? (
-              <li className="mt-8">
+            {/* My Tickets, Schedule, and Community only visible when user is logged in */}
+            {user && (
+              <>
                 <Link
                   to="/profile"
-                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium transition duration-200 inline-block shadow-lg"
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isProfileActive
+                      ? "bg-primary-container text-on-primary font-semibold"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                    }`}
                 >
-                  My Profile
+                  <span>My Tickets</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </Link>
-              </li>
-            ) : (
-              <li className="mt-6">
                 <Link
-                  to="/login"
-                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium transition duration-200 inline-block shadow-lg"
-                  onClick={() => setMenuOpen(false)}
+                  to="/events"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="font-label-md text-label-md px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container transition-colors flex items-center justify-between"
                 >
-                  Login
+                  <span>Schedule</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </Link>
-              </li>
+                <Link
+                  to="/chats"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isCommunityActive
+                      ? "bg-primary-container text-on-primary font-semibold"
+                      : "text-on-surface-variant hover:bg-surface-container"
+                    }`}
+                >
+                  <span>Community</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </Link>
+              </>
             )}
-          </ul>
+
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isAboutActive
+                  ? "bg-primary-container text-on-primary font-semibold"
+                  : "text-on-surface-variant hover:bg-surface-container"
+                }`}
+            >
+              <span>About</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+          </nav>
+
+          {/* User Profile or Login Link */}
+          <div className="pt-4 border-t border-surface-container-high mt-auto">
+            {user ? (
+              <Link
+                to="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 p-3 rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary-container/20 shrink-0 flex items-center justify-center bg-surface-container-high">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={currentUser?.userName || "Profile"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary-container text-white font-bold text-sm select-none">
+                      {(currentUser?.userName || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-label-md text-label-md font-semibold text-on-surface">
+                    {currentUser?.userName || "Profile"}
+                  </span>
+                  <span className="text-body-sm text-on-surface-variant">View Profile & Tickets</span>
+                </div>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full py-3 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold text-center block shadow-md hover:bg-surface-tint transition-all"
+              >
+                Log In to ACN.
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      )}
+    </>
   );
 };
 

@@ -76,7 +76,7 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
   };
 
   return (
-    <div className="lg:w-2/3 w-full bg-zinc-900 text-white h-full overflow-y-auto rounded-lg block">
+    <div className="lg:w-2/3 w-full bg-surface-container-lowest border border-outline-variant/30 text-on-surface h-full overflow-y-auto rounded-2xl shadow-sm block">
       {isPending ? (
         <div className="h-full w-full flex justify-center items-center">
           <Spinner />
@@ -85,24 +85,24 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
         ""
       )}
       <div
-        className="h-[8.33%] w-full flex items-center p-2 gap-2
-       shadow-lg text-white bg-zinc-700 rounded-t-lg">
+        className="h-[8.33%] w-full flex items-center p-3 gap-2
+       border-b border-outline-variant/30 text-on-surface bg-surface-container-low rounded-t-2xl">
         {/* Hamburger Menu */}
         <div className="lg:hidden p-2">
-          <button onClick={toggleSidebar} className="text-white">
+          <button onClick={toggleSidebar} className="text-on-surface">
             <FaBars />
           </button>
         </div>
         <div className="flex items-center gap-2">
           <Avatar size={"sm"} name={groupInfo?.data?.name} />
-          <h1 className="text-lg font-bold truncate ">
+          <h1 className="text-base font-bold truncate text-on-surface">
             {groupInfo?.data?.name || "Group Name"}
           </h1>
         </div>
       </div>
-      <ul className="flex flex-col gap-3 mx-4 p-4 h-5/6 overflow-y-auto scroll-smooth rounded-lg shadow-inner">
+      <ul className="flex flex-col gap-3 mx-4 p-4 h-5/6 overflow-y-auto scroll-smooth rounded-lg">
         {conversation?.length === 0 && (
-          <div className="h-full w-full flex justify-center items-center text-gray-400">
+          <div className="h-full w-full flex justify-center items-center text-on-surface-variant text-sm">
             <p>Start a new conversation</p>
           </div>
         )}
@@ -126,19 +126,18 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
 
               {/* Chat Bubble */}
               <div
-                className={`p-2 flex ${
+                className={`p-3 flex ${
                   isSender
-                    ? "justify-end bg-gray-800"
-                    : "justify-start bg-gray-700"
-                } flex-col text-white rounded-xl max-w-[60%] shadow-md`}>
+                    ? "justify-end bg-primary-container text-on-primary"
+                    : "justify-start bg-surface-container-low border border-outline-variant/20 text-on-surface"
+                } flex-col rounded-2xl max-w-[65%] shadow-sm`}>
                 {/* Sender Info */}
                 <p
-                  className={`text-xs justify-between flex ${
-                    isSender ? "text-right " : "text-left "
+                  className={`text-xs justify-between flex items-center ${
+                    isSender ? "text-right text-on-primary/90" : "text-left text-on-surface-variant font-medium"
                   } mb-1`}>
                   <span
-                    className=""
-                    style={{ color: getRandomColor(chat?.senderId?.userName) }}>
+                    style={{ color: isSender ? "inherit" : getRandomColor(chat?.senderId?.userName) }}>
                     {chat?.senderId?.userName}
                   </span>
                   <span
@@ -146,19 +145,19 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
                       groupInfo?.data?.admin?._id === chat?.senderId?._id
                         ? "inline-block"
                         : "hidden"
-                    } bg-yellow-200 text-xs text-black px-2 ml-2 rounded-full`}>
+                    } bg-amber-200 text-[10px] text-amber-900 font-bold px-2 ml-2 rounded-full`}>
                     Host
                   </span>
                 </p>
                 {/* Message */}
-                <p className="font-mono text-sm leading-relaxed">
+                <p className="text-sm leading-relaxed">
                   {chat?.message}
                 </p>
                 {/* Timestamp */}
                 <p
-                  className={`text-xs font-mono ${
-                    isSender ? "text-left" : "text-right"
-                  } mt-2 text-gray-400`}>
+                  className={`text-[10px] ${
+                    isSender ? "text-left text-on-primary/70" : "text-right text-on-surface-variant/70"
+                  } mt-1.5`}>
                   {formatTimestamp(chat?.createdAt)}
                 </p>
               </div>
@@ -168,19 +167,19 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
       </ul>
       <form
         onSubmit={handleSend}
-        className="w-full h-[8.33%] px-4 py-2 bg-zinc-700 flex items-center justify-between rounded-b-lg
-         border-t border-gray-600 overflow-hidden">
+        className="w-full h-[8.33%] px-4 py-2 bg-surface-container-low flex items-center justify-between rounded-b-2xl
+         border-t border-outline-variant/30 overflow-hidden">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type a message..."
-          className="h-full w-5/6 md:w-[90%] text-slate-200 bg-zinc-800 p-2 rounded-lg border border-zinc-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="h-full w-5/6 md:w-[90%] text-on-surface bg-surface-container-lowest p-2.5 rounded-xl border border-outline-variant/40 focus:outline-none focus:border-primary-container placeholder:text-outline text-sm"
         />
         <button
           type="submit"
-          className="bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-800 text-white p-2  shadow-md transition-transform transform hover:scale-110">
-          {pending ? <Spinner size="sm" /> : <VscSend size={20} />}
+          className="bg-primary-container rounded-full flex items-center justify-center hover:bg-surface-tint text-on-primary p-2.5 shadow-sm transition-transform transform active:scale-95">
+          {pending ? <Spinner size="sm" /> : <VscSend size={18} />}
         </button>
       </form>
     </div>

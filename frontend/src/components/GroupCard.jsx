@@ -5,21 +5,21 @@ const GroupCard = ({ group, eventId }) => {
   const toggleGroup = () => setExpanded(!expanded);
 
   return (
-    <div className=" rounded p-2 bg-zinc-600 shadow-md my-4">
+    <div className="rounded-xl p-3 bg-surface-container-low border border-outline-variant/30 shadow-sm my-3 text-on-surface">
       <div
         className="flex justify-between items-center cursor-pointer"
         onClick={toggleGroup}>
         <div>
-          <h4 className="text-lg font-medium md:flex gap-1">
+          <h4 className="text-base font-semibold md:flex items-center gap-2">
             {group?.name}
             {group?.isHead && (
-              <div className=" px-1 md:px-2 py-1 bg-yellow-100 flex flex-col md:flex-row text-yellow-800 text-center rounded-full text-sm">
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold uppercase">
                 Head Group
-              </div>
+              </span>
             )}
           </h4>
         </div>
-        <span className="text-blue-600">{expanded ? "▼" : "▶"}</span>
+        <span className="text-primary-container text-xs">{expanded ? "▼" : "▶"}</span>
       </div>
       {expanded && <GroupDetails group={group} />}
     </div>

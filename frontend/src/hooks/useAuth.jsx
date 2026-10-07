@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchRoles } from "../services/api";
+import { getPanelData } from "../services/api";
 
 const AuthContext = createContext();
 
@@ -20,6 +20,33 @@ export const AuthProvider = ({ children }) => {
     }
     return null;
   });
+
+  // Query user profile data so profile_image_url is kept up to date across the app
+  const { data: panelData } = useQuery({
+    queryKey: ["profile-panel", user?._id],
+    queryFn: getPanelData,
+    enabled: !!user?._id,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (panelData?.user) {
+      setUser((prev) => {
+        if (!prev) return prev;
+        if (
+          prev.profile_image_url !== panelData.user.profile_image_url ||
+          prev.userName !== panelData.user.userName ||
+          prev.email !== panelData.user.email
+        ) {
+          return {
+            ...prev,
+            ...panelData.user,
+          };
+        }
+        return prev;
+      });
+    }
+  }, [panelData]);
 
   useEffect(() => {
     localStorage.removeItem("token");

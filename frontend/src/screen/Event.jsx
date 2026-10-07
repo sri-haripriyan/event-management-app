@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import { lazy } from "react";
 import { useParams } from "react-router-dom";
 import { Fetchevent } from "../services/api";
 import { useQuery } from "@tanstack/react-query";
@@ -20,14 +20,14 @@ const Event = () => {
 	const event = data?.event;
 
 	return (
-		<div className="w-full min-h-screen bg-slate-950 text-white font-poppins">
+		<div className="w-full min-h-screen bg-surface text-on-surface font-poppins">
 			<Header />
 			{isLoading ? (
-				<div className="flex justify-center w-full items-center min-h-[80vh]">
+				<div className="flex justify-center w-full items-center min-h-[80vh] pt-16">
 					<Spinner />
 				</div>
 			) : (
-				<div className="animate-fade-in">
+				<div className="animate-fade-in pt-16">
 					<EventSection event={event} />
 					<CommentSection eventId={eventId} />
 					<ToastContainer />

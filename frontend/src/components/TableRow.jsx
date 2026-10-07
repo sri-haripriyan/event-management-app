@@ -40,38 +40,38 @@ const TableRow = ({ data }) => {
   });
 
   return (
-    <tr className="border-b hover:bg-zinc-500 hover:text-black text-white text-center">
-      <td className="px-4 py-2">{data?.user?.userName}</td>
-      <td className="px-4 py-2">{data?.user?.email}</td>
-      <td className="px-4 py-2">{data?.group?.name}</td>
-      <td className="px-4 py-2">{localStatus}</td>
-      <td className="px-4 py-2">{formatTimestamp(data?.createdAt)}</td>
-      <td className="text-center px-4 py-2">
+    <tr className="border-b border-outline-variant/20 hover:bg-surface-container-low text-on-surface text-center transition-colors text-sm">
+      <td className="px-4 py-3">{data?.user?.userName}</td>
+      <td className="px-4 py-3">{data?.user?.email}</td>
+      <td className="px-4 py-3">{data?.group?.name}</td>
+      <td className="px-4 py-3">{localStatus}</td>
+      <td className="px-4 py-3 text-on-surface-variant">{formatTimestamp(data?.createdAt)}</td>
+      <td className="text-center px-4 py-3">
         {localStatus === "pending" ? (
-          <div className="flex gap-1 justify-around items-center">
+          <div className="flex gap-2 justify-center items-center">
             <button
-              className="w-8 h-8 bg-black rounded-full flex justify-center items-center disabled:opacity-50"
+              className="w-8 h-8 bg-surface-container-lowest border border-outline-variant/30 hover:bg-surface-container rounded-full flex justify-center items-center shadow-sm disabled:opacity-50"
               onClick={() => mutate({ requestId, action: "approve" })}
               disabled={loadingAction === "approve"}>
               {loadingAction === "approve" ? (
-                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                <span className="animate-spin w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full"></span>
               ) : (
-                <TiTick color="green" />
+                <TiTick className="text-emerald-600" size={18} />
               )}
             </button>
             <button
-              className="w-8 h-8 bg-black rounded-full flex justify-center items-center disabled:opacity-50"
+              className="w-8 h-8 bg-surface-container-lowest border border-outline-variant/30 hover:bg-surface-container rounded-full flex justify-center items-center shadow-sm disabled:opacity-50"
               onClick={() => mutate({ requestId, action: "reject" })}
               disabled={loadingAction === "reject"}>
               {loadingAction === "reject" ? (
-                <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span>
+                <span className="animate-spin w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full"></span>
               ) : (
-                <FaXmark color="red" />
+                <FaXmark className="text-rose-600" size={14} />
               )}
             </button>
           </div>
         ) : (
-          <p>{localStatus}</p>
+          <p className="font-medium text-xs uppercase">{localStatus}</p>
         )}
       </td>
     </tr>

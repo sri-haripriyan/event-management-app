@@ -20,13 +20,13 @@ const App = () => {
   return (
     <Suspense
       fallback={
-        <div className="w-full h-screen">
+        <div className="w-full h-screen bg-surface flex items-center justify-center">
           <Spinner />
         </div>
       }
     >
       <Router>
-        <div className="w-full min-h-screen bg-slate-950 mx-auto">
+        <div className="w-full min-h-screen bg-surface text-on-surface mx-auto">
           <Routes>
             <Route path="/" element={<GetStarted />} />
             <Route path="/events" element={<Events />} />
@@ -41,7 +41,15 @@ const App = () => {
             <Route path="/payments/:eventId" element={<PaymentPage />} />
             <Route path="/about" element={<About />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="*" element={<div>Not Found</div>} />
+            <Route
+              path="*"
+              element={
+                <div className="min-h-screen bg-surface flex flex-col items-center justify-center text-on-surface font-poppins">
+                  <h1 className="text-4xl font-extrabold mb-2">404</h1>
+                  <p className="text-on-surface-variant font-medium">Page Not Found</p>
+                </div>
+              }
+            />
           </Routes>
         </div>
       </Router>
