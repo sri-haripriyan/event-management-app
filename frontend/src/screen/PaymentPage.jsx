@@ -145,11 +145,11 @@ const PaymentPage = () => {
 	};
 
 	return (
-		<div className="flex flex-col gap-5 justify-center items-center min-h-screen bg-surface font-poppins text-on-surface p-4 sm:p-8 relative text-sm md:text-base">
+		<div className="flex flex-col gap-5 justify-center items-center min-h-screen bg-surface font-poppins text-on-surface p-4 sm:p-8 pt-20 relative text-sm md:text-base">
 			<MdOutlineArrowBackIosNew
 				size={20}
 				onClick={() => navigate("/events")}
-				className="cursor-pointer transition-all text-on-surface-variant hover:text-on-surface ease-in-out hover:scale-125 rounded-full absolute left-6 top-6"
+				className="cursor-pointer transition-all text-on-surface-variant hover:text-on-surface ease-in-out hover:scale-125 rounded-full absolute left-6 top-20"
 			/>
 
 			<div className="w-full max-w-xl flex flex-col justify-around items-center bg-surface-container-lowest border border-outline-variant/30 p-6 sm:p-8 gap-4 rounded-3xl shadow-sm">

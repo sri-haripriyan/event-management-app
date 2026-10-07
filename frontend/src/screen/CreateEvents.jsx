@@ -168,7 +168,7 @@ const CreateEvents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex justify-center items-center py-10 px-4 font-poppins text-on-surface">
+    <div className="min-h-screen bg-surface flex justify-center items-center py-10 pt-24 px-4 font-poppins text-on-surface">
       {/* Background decorations */}
       <div className="absolute top-10 left-10 w-72 h-72 bg-primary-container/5 rounded-full blur-[80px] pointer-events-none"></div>
       <div className="absolute bottom-10 right-10 w-72 h-72 bg-secondary-container/10 rounded-full blur-[80px] pointer-events-none"></div>

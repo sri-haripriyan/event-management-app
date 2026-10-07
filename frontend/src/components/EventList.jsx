@@ -4,13 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBlogs } from "../services/api.js";
 import Spinner from "./Spinner.jsx";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 
-const EventList = ({ searchTerm }) => {
+const EventList = ({ searchTerm: propSearchTerm }) => {
 	const queryClient = useQueryClient();
 	const location = useLocation();
+	const [searchParams] = useSearchParams();
 	const [page, setPage] = useState(1);
 	const [filterType, setFilterType] = useState("all"); // 'all', 'paid', 'free'
+
+	const searchTerm = propSearchTerm !== undefined ? propSearchTerm : (searchParams.get("search") || "");
 
 	const { isLoading, isPending, data } = useQuery({
 		queryKey: ["events", page],

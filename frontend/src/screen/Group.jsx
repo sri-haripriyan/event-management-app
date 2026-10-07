@@ -14,7 +14,7 @@ const GroupV1 = () => {
 	};
 
 	return (
-		<div className="flex p-2 w-full h-screen gap-2 bg-surface font-poppins text-on-surface">
+		<div className="flex p-2 pt-20 w-full h-screen gap-2 bg-surface font-poppins text-on-surface">
 			<Suspense
 				fallback={
 					<div className="w-full h-screen flex items-center justify-center">

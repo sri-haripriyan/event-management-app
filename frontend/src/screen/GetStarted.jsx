@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
 
 const GetStarted = () => {
 	return (
@@ -11,7 +10,6 @@ const GetStarted = () => {
 			{/* Grid Overlay */}
 			<div className="absolute inset-0 bg-[linear-gradient(to_right,#131b2e06_1px,transparent_1px),linear-gradient(to_bottom,#131b2e06_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_80%,transparent_100%)] pointer-events-none"></div>
 
-			<Header />
 
 			{/* Hero Center Block */}
 			<div className="z-10 w-full max-w-4xl mx-auto px-6 pt-28 pb-20 flex flex-col items-center justify-center text-center gap-6 animate-fade-in flex-1">

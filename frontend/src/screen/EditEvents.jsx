@@ -83,7 +83,7 @@ const EditEvents = () => {
   });
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-6 sm:p-8 bg-surface text-on-surface font-poppins text-sm md:text-base">
+    <div className="flex justify-center items-center min-h-screen p-6 sm:p-8 pt-24 bg-surface text-on-surface font-poppins text-sm md:text-base">
       <div className="bg-surface-container-lowest border border-outline-variant/30 shadow-sm p-6 sm:p-8 rounded-3xl w-full max-w-2xl flex flex-col gap-6">
         <form onSubmit={handleSubmit} className="flex flex-col h-full w-full gap-5">
           <h2 className="text-xl font-bold text-on-surface border-b border-outline-variant/30 pb-2">

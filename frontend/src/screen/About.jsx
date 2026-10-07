@@ -1,4 +1,3 @@
-import Header from "../components/Header.jsx";
 import ContactForm from "../components/ContactForm.jsx";
 import { FaLinkedin } from "react-icons/fa";
 import { MdOutlineSupportAgent } from "react-icons/md";
@@ -11,7 +10,6 @@ const About = () => {
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-container/5 rounded-full blur-[100px] pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary-container/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-      <Header />
 
       <div className="max-w-6xl mx-auto px-6 pt-24 pb-12 space-y-16 z-10 relative">
         
