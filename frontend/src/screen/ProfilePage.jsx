@@ -6,7 +6,6 @@ import { useAuth } from "../hooks/useAuth";
 import { getPanelData, uploadImage, signout } from "../services/api";
 import ImageCropModal from "../components/ImageCropModal";
 import Spinner from "../components/Spinner";
-import Header from "../components/Header";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -215,9 +214,6 @@ const ProfilePage = () => {
 
   return (
     <div className="bg-surface font-body-md text-on-surface min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary">
-      {/* Header */}
-      <Header activeTab="profile" />
-
       {/* Main Content Area */}
       <main className="w-full pt-20 bg-surface min-h-[calc(100vh-64px)] flex-1">
         <div className="max-w-7xl mx-auto w-full px-6 py-8">

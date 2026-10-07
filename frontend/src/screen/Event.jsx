@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Fetchevent } from "../services/api";
 import { useQuery } from "@tanstack/react-query";
 import { ToastContainer } from "react-toastify";
-import Header from "../components/Header";
 
 const CommentSection = lazy(() => import("../components/CommentSection"));
 const EventSection = lazy(() => import("../components/EventSection"));
@@ -21,7 +20,6 @@ const Event = () => {
 
 	return (
 		<div className="w-full min-h-screen bg-surface text-on-surface font-poppins">
-			<Header />
 			{isLoading ? (
 				<div className="flex justify-center w-full items-center min-h-[80vh] pt-16">
 					<Spinner />

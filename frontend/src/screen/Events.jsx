@@ -1,18 +1,13 @@
-import { useState } from "react";
 import { ToastContainer } from "react-toastify";
 import EventList from "../components/EventList";
-import Header from "../components/Header";
 import ScrollToTop from "../components/ScrollToTop";
 
 const Events = () => {
-	const [searchTerm, setSearchTerm] = useState("");
-
 	return (
 		<div className="relative w-full min-h-screen bg-surface flex flex-col justify-between overflow-hidden text-on-surface font-poppins">
 			<div>
-				<Header showSearch={true} searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 				<section className="pt-16">
-					<EventList searchTerm={searchTerm} />
+					<EventList />
 					<ScrollToTop />
 				</section>
 			</div>

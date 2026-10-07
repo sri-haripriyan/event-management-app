@@ -1,7 +1,8 @@
-import React, { Suspense } from "react";
+import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { lazy } from "react";
 import Spinner from "./components/Spinner";
+import Layout from "./layout/Layout";
+
 const Events = lazy(() => import("./screen/Events"));
 const Event = lazy(() => import("./screen/Event"));
 const Login = lazy(() => import("./screen/Login"));
@@ -28,19 +29,21 @@ const App = () => {
       <Router>
         <div className="w-full min-h-screen bg-surface text-on-surface mx-auto">
           <Routes>
-            <Route path="/" element={<GetStarted />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:eventId" element={<Event />} />
-            <Route path="/chats" element={<Group />} />
-            <Route path="/create-events" element={<CreateEvents />} />
-            <Route path="/updateEvent/:eventId" element={<EditEvents />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/request" element={<Request />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/payments/:eventId" element={<PaymentPage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route element={<Layout />}>
+              <Route path="/" element={<GetStarted />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/events/:eventId" element={<Event />} />
+              <Route path="/chats" element={<Group />} />
+              <Route path="/create-events" element={<CreateEvents />} />
+              <Route path="/updateEvent/:eventId" element={<EditEvents />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/request" element={<Request />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/payments/:eventId" element={<PaymentPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/profile" element={<ProfilePage />} />
+            </Route>
             <Route
               path="*"
               element={

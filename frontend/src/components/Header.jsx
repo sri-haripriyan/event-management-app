@@ -1,43 +1,44 @@
-/* eslint-disable react/prop-types */
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import { getPanelData } from "../services/api";
 
-const Header = ({
-  activeTab,
-  showSearch = true,
-  searchTerm: controlledSearchTerm,
-  setSearchTerm: setControlledSearchTerm,
-}) => {
+const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [internalSearchValue, setInternalSearchValue] = useState(
     searchParams.get("search") || ""
   );
 
-  const isControlled = controlledSearchTerm !== undefined && typeof setControlledSearchTerm === "function";
-  const currentSearchValue = isControlled ? controlledSearchTerm : internalSearchValue;
+  // Keep internal state updated if URL query param changes
+  useEffect(() => {
+    setInternalSearchValue(searchParams.get("search") || "");
+  }, [searchParams]);
 
   const handleSearchChange = (e) => {
     const val = e.target.value;
-    if (isControlled) {
-      setControlledSearchTerm(val);
-    } else {
-      setInternalSearchValue(val);
+    setInternalSearchValue(val);
+    if (location.pathname === "/events") {
+      if (val.trim()) {
+        setSearchParams({ search: val });
+      } else {
+        setSearchParams({});
+      }
     }
   };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    const query = currentSearchValue.trim();
+    const query = internalSearchValue.trim();
     if (location.pathname === "/events") {
-      if (isControlled) {
-        setControlledSearchTerm(query);
+      if (query) {
+        setSearchParams({ search: query });
+      } else {
+        setSearchParams({});
       }
     } else {
       if (query) {
@@ -48,26 +49,6 @@ const Header = ({
     }
     setMobileMenuOpen(false);
   };
-
-  // Keep internal state updated if query param changes
-  useEffect(() => {
-    const q = searchParams.get("search");
-    if (q !== null && !isControlled) {
-      setInternalSearchValue(q);
-    }
-  }, [searchParams, isControlled]);
-
-  // Determine active nav item
-  const currentPath = location?.pathname || "";
-  const isEventsActive =
-    activeTab === "events" ||
-    (!activeTab && (currentPath === "/" || currentPath === "/events"));
-  const isProfileActive =
-    activeTab === "profile" || (!activeTab && currentPath === "/profile");
-  const isCommunityActive =
-    activeTab === "chats" || (!activeTab && currentPath === "/chats");
-  const isAboutActive =
-    activeTab === "about" || (!activeTab && currentPath === "/about");
 
   // Fetch real-time user profile data (including uploaded profile image)
   const { data: panelData } = useQuery({
@@ -82,6 +63,20 @@ const Header = ({
     currentUser?.profile_image_url ||
     user?.profile_image_url ||
     null;
+
+  const navLinkClass = ({ isActive }) =>
+    `font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${
+      isActive
+        ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+    }`;
+
+  const mobileNavLinkClass = ({ isActive }) =>
+    `font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${
+      isActive
+        ? "bg-primary-container text-on-primary font-semibold"
+        : "text-on-surface-variant hover:bg-surface-container"
+    }`;
 
   return (
     <>
@@ -100,15 +95,9 @@ const Header = ({
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-space-sm">
-              <Link
-                to="/events"
-                className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isEventsActive
-                    ? "bg-primary-container text-on-primary font-semibold shadow-sm"
-                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                  }`}
-              >
+              <NavLink to="/events" className={navLinkClass}>
                 Events
-              </Link>
+              </NavLink>
               <Link
                 to="/events"
                 className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
@@ -119,62 +108,42 @@ const Header = ({
               {/* My Tickets, Schedule, and Community are only visible when user is logged in */}
               {user && (
                 <>
-                  <Link
-                    to="/profile"
-                    className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isProfileActive
-                        ? "bg-primary-container text-on-primary font-semibold shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                      }`}
-                  >
+                  <NavLink to="/profile" className={navLinkClass}>
                     My Tickets
-                  </Link>
+                  </NavLink>
                   <Link
                     to="/events"
                     className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
                   >
                     Schedule
                   </Link>
-                  <Link
-                    to="/chats"
-                    className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isCommunityActive
-                        ? "bg-primary-container text-on-primary font-semibold shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                      }`}
-                  >
+                  <NavLink to="/chats" className={navLinkClass}>
                     Community
-                  </Link>
+                  </NavLink>
                 </>
               )}
 
-              <Link
-                to="/about"
-                className={`font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isAboutActive
-                    ? "bg-primary-container text-on-primary font-semibold shadow-sm"
-                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                  }`}
-              >
+              <NavLink to="/about" className={navLinkClass}>
                 About
-              </Link>
+              </NavLink>
             </nav>
           </div>
 
           {/* Right Header Elements */}
           <div className="flex items-center gap-space-md">
             {/* Search Input */}
-            {showSearch && (
-              <form onSubmit={handleSearchSubmit} className="relative hidden sm:flex items-center">
-                <span className="material-symbols-outlined absolute left-3 text-outline pointer-events-none text-lg">
-                  search
-                </span>
-                <input
-                  value={currentSearchValue}
-                  onChange={handleSearchChange}
-                  className="w-56 md:w-64 pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest transition-all border border-transparent focus:border-outline-variant"
-                  placeholder="Search events, spaces, organizers..."
-                  type="text"
-                />
-              </form>
-            )}
+            <form onSubmit={handleSearchSubmit} className="relative hidden sm:flex items-center">
+              <span className="material-symbols-outlined absolute left-3 text-outline pointer-events-none text-lg">
+                search
+              </span>
+              <input
+                value={internalSearchValue}
+                onChange={handleSearchChange}
+                className="w-56 md:w-64 pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest transition-all border border-transparent focus:border-outline-variant"
+                placeholder="Search events, spaces, organizers..."
+                type="text"
+              />
+            </form>
 
             {/* Notification Bell */}
             <button
@@ -238,34 +207,29 @@ const Header = ({
       {mobileMenuOpen && (
         <div className="fixed inset-0 top-16 z-40 bg-surface/95 backdrop-blur-xl border-b border-surface-container-high p-6 flex flex-col gap-6 lg:hidden animate-fade-in shadow-xl">
           {/* Mobile Search */}
-          {showSearch && (
-            <form onSubmit={handleSearchSubmit} className="relative w-full">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg">
-                search
-              </span>
-              <input
-                value={currentSearchValue}
-                onChange={handleSearchChange}
-                className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest border border-outline-variant/30"
-                placeholder="Search events, spaces, organizers..."
-                type="text"
-              />
-            </form>
-          )}
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg">
+              search
+            </span>
+            <input
+              value={internalSearchValue}
+              onChange={handleSearchChange}
+              className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest border border-outline-variant/30"
+              placeholder="Search events, spaces, organizers..."
+              type="text"
+            />
+          </form>
 
           {/* Mobile Navigation Links */}
           <nav className="flex flex-col gap-2">
-            <Link
+            <NavLink
               to="/events"
               onClick={() => setMobileMenuOpen(false)}
-              className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isEventsActive
-                  ? "bg-primary-container text-on-primary font-semibold"
-                  : "text-on-surface-variant hover:bg-surface-container"
-                }`}
+              className={mobileNavLinkClass}
             >
               <span>Events</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </Link>
+            </NavLink>
             <Link
               to="/events"
               onClick={() => setMobileMenuOpen(false)}
@@ -278,17 +242,14 @@ const Header = ({
             {/* My Tickets, Schedule, and Community only visible when user is logged in */}
             {user && (
               <>
-                <Link
+                <NavLink
                   to="/profile"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isProfileActive
-                      ? "bg-primary-container text-on-primary font-semibold"
-                      : "text-on-surface-variant hover:bg-surface-container"
-                    }`}
+                  className={mobileNavLinkClass}
                 >
                   <span>My Tickets</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </Link>
+                </NavLink>
                 <Link
                   to="/events"
                   onClick={() => setMobileMenuOpen(false)}
@@ -297,31 +258,25 @@ const Header = ({
                   <span>Schedule</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </Link>
-                <Link
+                <NavLink
                   to="/chats"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isCommunityActive
-                      ? "bg-primary-container text-on-primary font-semibold"
-                      : "text-on-surface-variant hover:bg-surface-container"
-                    }`}
+                  className={mobileNavLinkClass}
                 >
                   <span>Community</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </Link>
+                </NavLink>
               </>
             )}
 
-            <Link
+            <NavLink
               to="/about"
               onClick={() => setMobileMenuOpen(false)}
-              className={`font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isAboutActive
-                  ? "bg-primary-container text-on-primary font-semibold"
-                  : "text-on-surface-variant hover:bg-surface-container"
-                }`}
+              className={mobileNavLinkClass}
             >
               <span>About</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </Link>
+            </NavLink>
           </nav>
 
           {/* User Profile or Login Link */}
