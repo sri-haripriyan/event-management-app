@@ -27,7 +27,7 @@ const GroupSidebar = ({
 
   return (
     <div
-      className={`lg:w-1/3 w-full bg-zinc-900 z-10 text-white p-4 h-full overflow-y-auto rounded-lg fixed top-0 left-0 transition-transform transform ${
+      className={`lg:w-1/3 w-full bg-surface-container-lowest border border-outline-variant/30 z-10 text-on-surface p-4 h-full overflow-y-auto rounded-2xl shadow-sm fixed top-0 left-0 transition-transform transform ${
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       } lg:translate-x-0 lg:relative lg:block`}
     >
@@ -40,22 +40,22 @@ const GroupSidebar = ({
       )}
 
       <div className="w-full flex items-center justify-between p-4">
-        <div className="flex items-center gap-2  top-2 left-2 text-white h-full justify-center">
+        <div className="flex items-center gap-2 top-2 left-2 text-on-surface h-full justify-center">
           <MdOutlineArrowBackIosNew
             size={20}
             onClick={() => navigate("/events")}
-            className="cursor-pointer transition-all ease-in-out hover:scale-150  rounded-full"
+            className="cursor-pointer transition-all ease-in-out hover:scale-125 text-on-surface-variant hover:text-on-surface"
           />
           <h2 className="text-xl font-bold">Events</h2>
         </div>
         <div className="lg:hidden p-4">
-          <button onClick={toggleSidebar} className="text-white">
-            X
+          <button onClick={toggleSidebar} className="text-on-surface">
+            ✕
           </button>
         </div>
       </div>
       {data?.length === 0 && (
-        <div className=" h-1/2 flex justify-center items-end">
+        <div className=" h-1/2 flex justify-center items-end text-on-surface-variant text-sm">
           <h1>join some event and get started</h1>
         </div>
       )}
@@ -63,8 +63,8 @@ const GroupSidebar = ({
         <div key={event?._id} className="mb-2">
           {/* Event Name (Folder) */}
           <div
-            className={`cursor-pointer flex items-center rounded-lg p-2 hover:bg-gray-600 ${
-              selectedEvent === event?._id ? "bg-purple-700" : "bg-zinc-600"
+            className={`cursor-pointer flex items-center rounded-xl p-2.5 font-medium text-sm transition-colors ${
+              selectedEvent === event?._id ? "bg-primary-container text-on-primary shadow-sm" : "bg-surface-container-low text-on-surface hover:bg-surface-container"
             }`}
             onClick={() => toggleEvent(event?._id)}
           >
@@ -80,10 +80,10 @@ const GroupSidebar = ({
               {event?.groups?.map((group) => (
                 <div
                   key={group?._id}
-                  className={`cursor-pointer flex items-center hover:bg-gray-500 p-2 border-l-2 border-gray-100 ${
+                  className={`cursor-pointer flex items-center p-2 rounded-lg text-sm border-l-2 border-primary-container/40 transition-colors ${
                     selectedGroup === group?._id && selectedEvent === event?._id
-                      ? "bg-purple-500"
-                      : "bg-zinc-600"
+                      ? "bg-primary-container/15 text-primary-container font-semibold"
+                      : "bg-surface-container-low/70 text-on-surface hover:bg-surface-container"
                   }`}
                   onClick={() => {
                     setSelectedGroup(group?._id);
@@ -92,9 +92,9 @@ const GroupSidebar = ({
                   }}
                 >
                   {group?.isHead ? (
-                    <p className="flex gap-2">
+                    <p className="flex items-center gap-2">
                       <span>{group?.name}</span>
-                      <span className="bg-yellow-300 px-2 text-black rounded-full">
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                         head
                       </span>
                     </p>

@@ -18,36 +18,36 @@ const Requests = () => {
   
 
   return (
-    <div className="relative h-[88vh] overflow-y-scroll">
-      <table className="w-full text-sm  2xl:text-2xl text-left rtl:text-right text-gray-500 rounded-lg mx-auto">
-        <thead className="text-xs w-full text-gray-700 uppercase bg-gray-50">
-          <tr className="h-4 w-40 ">
-            <th scope="col" className="px-6 py-3 ">
+    <div className="relative h-[88vh] overflow-y-auto">
+      <table className="w-full text-sm 2xl:text-base text-left rtl:text-right text-on-surface-variant rounded-xl overflow-hidden border border-outline-variant/30 bg-surface-container-lowest">
+        <thead className="text-xs uppercase bg-surface-container-low text-on-surface-variant border-b border-outline-variant/30">
+          <tr className="h-10">
+            <th scope="col" className="px-6 py-3 font-semibold">
               User
             </th>
-            <th scope="col" className="px-6 py-3">
+            <th scope="col" className="px-6 py-3 font-semibold">
               Group
             </th>
-            <th className="px-6 py-3">Status</th>
-            <th className="px-14 py-3 text-center">Actions</th>
+            <th className="px-6 py-3 font-semibold">Status</th>
+            <th className="px-14 py-3 text-center font-semibold">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-outline-variant/20">
           {requests?.map((request, i) => (
             <tr
               key={i}
-              className=" odd:bg-gray-900 even:bg-slate-800 border-b  border-gray-700"
+              className="odd:bg-surface-container-lowest even:bg-surface-container-low/40 hover:bg-surface-container-low transition-colors text-on-surface"
             >
-              <td className="px-6 py-4 2xl:px-9 2xl:py-6 ">
+              <td className="px-6 py-4 font-medium">
                 {request?.user?.userName}
               </td>
               <td className="px-6 py-4">{request?.group?.name}</td>
-              <td className="px-6 py-4">{request?.status}</td>
-              <td className=" flex justify-around px-6 py-4">
-                <button className="text-green-500" onClick={() => {}}>
+              <td className="px-6 py-4 font-semibold text-primary-container">{request?.status}</td>
+              <td className="flex justify-around px-6 py-4">
+                <button className="text-emerald-600 font-medium hover:underline" onClick={() => {}}>
                   Approve
                 </button>
-                <button className="text-red-500">Reject</button>
+                <button className="text-rose-500 font-medium hover:underline">Reject</button>
               </td>
             </tr>
           ))}

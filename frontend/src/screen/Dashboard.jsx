@@ -16,25 +16,25 @@ export default function Dashboard() {
 	const [activeTab, setActiveTab] = useState(tabs[0].path);
 	const navigate = useNavigate();
 	return (
-		<div className="w-full mx-auto">
+		<div className="w-full min-h-screen bg-surface text-on-surface font-poppins mx-auto p-4">
 			{/* Tab Headers */}
 			<div
 				onClick={() => navigate("/events")}
-				className="flex items-center gap-2 rounded-md absolute border-2 border-gray-500 hover:bg-gray-600 px-2 py-1 top-2 left-2 text-white cursor-pointer"
+				className="flex items-center gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container px-3 py-1.5 absolute top-3 left-3 text-on-surface cursor-pointer shadow-sm transition text-sm font-medium"
 			>
 				<LuCircleArrowLeft />
 				<p>Back</p>
 			</div>
-			<div className="flex justify-around items-center border-b border-gray-700 py-2 mt-10 sm:mt-0">
+			<div className="flex justify-around items-center border-b border-outline-variant/30 py-2 mt-12 sm:mt-2">
 				{tabs.map((tab) => (
 					<button
 						key={tab?.path}
 						onClick={() => setActiveTab(tab?.path)}
-						className={`px-4 py-2 text-sm font-medium
+						className={`px-4 py-2 text-sm font-medium transition-colors
               ${
 						activeTab === tab?.path
-							? "text-blue-400 border-b-2 border-blue-400"
-							: "text-gray-400"
+							? "text-primary-container border-b-2 border-primary-container font-semibold"
+							: "text-on-surface-variant hover:text-on-surface"
 					}
             `}
 					>
@@ -44,7 +44,7 @@ export default function Dashboard() {
 			</div>
 
 			{/* Tab Content */}
-			<div className="p-1 text-gray-300 text-sm md:text-lg select-none">
+			<div className="p-2 text-on-surface text-sm md:text-base select-none">
 				{activeTab === "/tab=profile" && <Profile />}
 				{activeTab === "/tab=groups" && <MyGroups />}
 				{activeTab === "/tab=requests" && <RequestComponent />}

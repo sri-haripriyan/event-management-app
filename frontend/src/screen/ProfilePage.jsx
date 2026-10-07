@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { getPanelData, uploadImage, signout } from "../services/api";
 import ImageCropModal from "../components/ImageCropModal";
 import Spinner from "../components/Spinner";
+import Header from "../components/Header";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -44,6 +45,18 @@ const ProfilePage = () => {
     queryFn: getPanelData,
     enabled: !!user,
   });
+
+  // Keep auth state in sync with panel profile data
+  useEffect(() => {
+    if (panelData?.user && user) {
+      if (
+        panelData.user.profile_image_url !== user.profile_image_url ||
+        panelData.user.userName !== user.userName
+      ) {
+        setUser((prev) => (prev ? { ...prev, ...panelData.user } : prev));
+      }
+    }
+  }, [panelData, user, setUser]);
 
   // Logout Mutation
   const { mutate: performLogout, isPending: isLoggingOut } = useMutation({
@@ -198,122 +211,23 @@ const ProfilePage = () => {
   };
 
   const currentUser = panelData?.user || user;
-  const currentAvatar =
-    currentUser?.profile_image_url ||
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250";
+  const currentAvatar = currentUser?.profile_image_url || null;
 
   return (
     <div className="bg-surface font-body-md text-on-surface min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 w-full z-40 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-surface-container-high/60">
-        <div className="h-16 max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between gap-space-md">
-          {/* Logo & Navigation */}
-          <div className="flex items-center gap-space-lg">
-            <Link to="/events" className="flex items-center gap-space-sm group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-container to-surface-tint flex items-center justify-center text-white font-headline-sm font-extrabold shadow-sm group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-lg">auto_awesome</span>
-              </div>
-              <span className="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">
-                Lumina
-              </span>
-            </Link>
-
-            <nav className="hidden lg:flex items-center gap-space-sm">
-              <Link
-                to="/events"
-                className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
-              >
-                Events
-              </Link>
-              <Link
-                to="/events"
-                className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
-              >
-                Discover
-              </Link>
-              <Link
-                to="/profile"
-                className="transition-colors bg-primary-container text-on-primary font-label-md text-label-md rounded-lg px-3 py-1.5 shadow-sm"
-              >
-                My Tickets
-              </Link>
-              <Link
-                to="/events"
-                className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
-              >
-                Schedule
-              </Link>
-              <Link
-                to="/chats"
-                className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
-              >
-                Community
-              </Link>
-            </nav>
-          </div>
-
-          {/* Right Header Elements */}
-          <div className="flex items-center gap-space-md">
-            {/* Search Input */}
-            <div className="relative hidden sm:flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-outline pointer-events-none text-lg">
-                search
-              </span>
-              <input
-                className="w-56 md:w-64 pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest transition-all border border-transparent focus:border-outline-variant"
-                placeholder="Search events, spaces, organizers..."
-                type="text"
-              />
-            </div>
-
-            {/* Notification Bell */}
-            <button
-              className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
-              type="button"
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined text-xl">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-            </button>
-
-            {/* Top Avatar Circle */}
-            <div className="flex items-center gap-space-sm pl-2">
-              <Link
-                to="/profile"
-                className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary-container/20 hover:ring-primary-container transition-all"
-                title="Profile"
-              >
-                <img
-                  alt={currentUser?.userName || "Profile"}
-                  className="w-full h-full object-cover"
-                  src={currentAvatar}
-                />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header activeTab="profile" />
 
       {/* Main Content Area */}
       <main className="w-full pt-20 bg-surface min-h-[calc(100vh-64px)] flex-1">
         <div className="max-w-7xl mx-auto w-full px-6 py-8">
           <div className="flex flex-col lg:flex-row gap-space-lg items-start">
-            
+
             {/* Left Column / Profile & Account Hub (380px fixed width on desktop) */}
             <aside className="w-full lg:w-[380px] shrink-0 flex flex-col gap-space-lg">
-              
+
               {/* Profile Summary Card */}
               <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm border border-outline-variant/30 flex flex-col">
-                {/* Status Badges */}
-                <div className="flex items-start justify-between">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/30 text-on-secondary-container font-label-sm text-label-sm">
-                    <span className="w-2 h-2 rounded-full bg-secondary-fixed-variant animate-pulse"></span>
-                    Online Profile
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold tracking-wide">
-                    PRO ATTENDEE
-                  </span>
-                </div>
 
                 {/* Avatar Frame with Hover Camera Action */}
                 <div className="flex flex-col items-center mt-space-md mb-space-sm text-center">
@@ -322,12 +236,18 @@ const ProfilePage = () => {
                     title="Click to change profile picture"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <div className="w-[120px] h-[120px] rounded-full p-1 bg-surface-container-high transition-transform duration-300 group-hover:scale-105 shadow-inner">
-                      <img
-                        alt={currentUser?.userName || "User Avatar"}
-                        className="w-full h-full rounded-full object-cover shadow-sm"
-                        src={currentAvatar}
-                      />
+                    <div className="w-[120px] h-[120px] rounded-full p-1 bg-surface-container-high transition-transform duration-300 group-hover:scale-105 shadow-inner overflow-hidden flex items-center justify-center">
+                      {currentAvatar ? (
+                        <img
+                          alt={currentUser?.userName || "User Avatar"}
+                          className="w-full h-full rounded-full object-cover shadow-sm"
+                          src={currentAvatar}
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full flex items-center justify-center bg-primary-container text-white text-4xl font-bold select-none">
+                          {(currentUser?.userName || "U").charAt(0).toUpperCase()}
+                        </div>
+                      )}
                     </div>
 
                     {/* Camera Button Affordance */}
@@ -418,7 +338,7 @@ const ProfilePage = () => {
                   ) : (
                     <>
                       <span className="material-symbols-outlined text-lg">logout</span>
-                      <span>Sign Out of Lumina</span>
+                      <span>Sign Out of ACN.</span>
                     </>
                   )}
                 </button>
@@ -539,7 +459,7 @@ const ProfilePage = () => {
 
             {/* Right Main Column / Event Passport Timeline */}
             <div className="flex-1 w-full min-w-0 flex flex-col gap-space-md">
-              
+
               {/* Section Header Bar */}
               <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
                 <div className="flex items-center gap-space-sm">
@@ -559,11 +479,10 @@ const ProfilePage = () => {
                         setFilterType("all");
                         setCurrentPage(1);
                       }}
-                      className={`px-3 py-1 rounded-md font-label-md text-label-md font-medium transition-all ${
-                        filterType === "all"
-                          ? "bg-primary-container text-on-primary shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface"
-                      }`}
+                      className={`px-3 py-1 rounded-md font-label-md text-label-md font-medium transition-all ${filterType === "all"
+                        ? "bg-primary-container text-on-primary shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface"
+                        }`}
                       type="button"
                     >
                       All ({allCount})
@@ -574,11 +493,10 @@ const ProfilePage = () => {
                         setFilterType("paid");
                         setCurrentPage(1);
                       }}
-                      className={`px-3 py-1 rounded-md font-label-md text-label-md font-medium transition-all ${
-                        filterType === "paid"
-                          ? "bg-primary-container text-on-primary shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface"
-                      }`}
+                      className={`px-3 py-1 rounded-md font-label-md text-label-md font-medium transition-all ${filterType === "paid"
+                        ? "bg-primary-container text-on-primary shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface"
+                        }`}
                       type="button"
                     >
                       Paid ({paidCount})
@@ -589,11 +507,10 @@ const ProfilePage = () => {
                         setFilterType("free");
                         setCurrentPage(1);
                       }}
-                      className={`px-3 py-1 rounded-md font-label-md text-label-md font-medium transition-all ${
-                        filterType === "free"
-                          ? "bg-primary-container text-on-primary shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface"
-                      }`}
+                      className={`px-3 py-1 rounded-md font-label-md text-label-md font-medium transition-all ${filterType === "free"
+                        ? "bg-primary-container text-on-primary shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface"
+                        }`}
                       type="button"
                     >
                       Free / Unpaid ({freeCount})
@@ -620,9 +537,8 @@ const ProfilePage = () => {
                             setSortOrder("newest");
                             setIsSortDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-surface-container flex items-center justify-between ${
-                            sortOrder === "newest" ? "text-primary-container font-semibold" : "text-on-surface"
-                          }`}
+                          className={`w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-surface-container flex items-center justify-between ${sortOrder === "newest" ? "text-primary-container font-semibold" : "text-on-surface"
+                            }`}
                         >
                           <span>Newest first</span>
                           {sortOrder === "newest" && (
@@ -635,9 +551,8 @@ const ProfilePage = () => {
                             setSortOrder("oldest");
                             setIsSortDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-surface-container flex items-center justify-between ${
-                            sortOrder === "oldest" ? "text-primary-container font-semibold" : "text-on-surface"
-                          }`}
+                          className={`w-full text-left px-3 py-1.5 text-xs font-medium hover:bg-surface-container flex items-center justify-between ${sortOrder === "oldest" ? "text-primary-container font-semibold" : "text-on-surface"
+                            }`}
                         >
                           <span>Oldest first</span>
                           {sortOrder === "oldest" && (
@@ -742,11 +657,10 @@ const ProfilePage = () => {
                         <div className="flex items-start gap-space-md min-w-0">
                           {/* Calendar Date Block */}
                           <div
-                            className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 shadow-sm ${
-                              isPaid
-                                ? "bg-primary-container/10 text-primary-container"
-                                : "bg-tertiary-container/15 text-tertiary"
-                            }`}
+                            className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 shadow-sm ${isPaid
+                              ? "bg-primary-container/10 text-primary-container"
+                              : "bg-tertiary-container/15 text-tertiary"
+                              }`}
                           >
                             <span className="font-headline-sm text-headline-sm font-bold leading-none">
                               {day}
@@ -765,11 +679,10 @@ const ProfilePage = () => {
 
                               {/* Status Badge */}
                               <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold ${
-                                  event.status === "Checked In"
-                                    ? "bg-secondary-container/40 text-on-secondary-container"
-                                    : "bg-surface-container-high text-on-surface"
-                                }`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold ${event.status === "Checked In"
+                                  ? "bg-secondary-container/40 text-on-secondary-container"
+                                  : "bg-surface-container-high text-on-surface"
+                                  }`}
                               >
                                 <span className="material-symbols-outlined text-xs">
                                   {event.status === "Checked In" ? "check_circle" : "done"}
@@ -879,11 +792,10 @@ const ProfilePage = () => {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-3 py-1 rounded-md font-label-sm text-label-sm font-bold transition-colors ${
-                          currentPage === page
-                            ? "bg-primary-container text-on-primary"
-                            : "hover:bg-surface-container text-on-surface"
-                        }`}
+                        className={`px-3 py-1 rounded-md font-label-sm text-label-sm font-bold transition-colors ${currentPage === page
+                          ? "bg-primary-container text-on-primary"
+                          : "hover:bg-surface-container text-on-surface"
+                          }`}
                         type="button"
                       >
                         {page}
@@ -914,7 +826,7 @@ const ProfilePage = () => {
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
           <div className="flex items-center gap-space-sm">
             <span className="font-headline-sm text-headline-sm text-on-surface font-bold">
-              Lumina Events
+              ACN. Events
             </span>
             <span className="text-outline">•</span>
             <span>Connecting minds, accelerating communities.</span>
@@ -928,7 +840,7 @@ const ProfilePage = () => {
               Community Guidelines
             </Link>
             <span className="text-outline">•</span>
-            <span>© 2025 Lumina Inc. All rights reserved.</span>
+            <span>© 2025 ACN. All rights reserved.</span>
           </div>
         </div>
       </footer>

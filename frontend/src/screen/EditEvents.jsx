@@ -83,86 +83,93 @@ const EditEvents = () => {
   });
 
   return (
-    <div className="flex justify-center items-center min-h-screen p-6 sm:p-8 text-sm md:text-base lg:text-lg">
-      <div className="bg-primary md:shadow-lg p-6 sm:p-8 rounded-lg w-full max-w-2xl flex flex-col gap-6">
-        <form onSubmit={handleSubmit} className="flex flex-col h-full w-full">
-          <div className="flex flex-col gap-5 md:p-4 md:bg-[#1a1a1a] text-[#e0e0e0] rounded-lg shadow-lg">
-            <h2 className="text-lg font-semibold text-[#f0f0f0]">
-              Event Details
-            </h2>
+    <div className="flex justify-center items-center min-h-screen p-6 sm:p-8 bg-surface text-on-surface font-poppins text-sm md:text-base">
+      <div className="bg-surface-container-lowest border border-outline-variant/30 shadow-sm p-6 sm:p-8 rounded-3xl w-full max-w-2xl flex flex-col gap-6">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full w-full gap-5">
+          <h2 className="text-xl font-bold text-on-surface border-b border-outline-variant/30 pb-2">
+            Edit Event Details
+          </h2>
 
-            {/* Event Name Input */}
+          {/* Event Name Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">Event Name</label>
             <input
               type="text"
               name="title"
-              className="w-full px-3 py-2 lg:py-3 border border-[#333333] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a90e2] bg-[#222222] text-[#e0e0e0] placeholder-[#888888]"
+              className="w-full px-4 py-2.5 border border-outline-variant/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-container/30 focus:border-primary-container bg-surface-container-low text-on-surface placeholder:text-outline text-sm"
               placeholder="Enter event name"
               value={formData?.title}
               onChange={handleChange}
             />
+          </div>
 
-            {/* Description Textarea */}
+          {/* Description Textarea */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">Description</label>
             <textarea
               name="description"
-              className="w-full px-3 py-2 border border-[#333333] rounded-md focus:outline-none focus:ring-2 focus:ring-[#4a90e2] bg-[#222222] text-[#e0e0e0] placeholder-[#888888] min-h-[80px] max-h-[80px]"
+              className="w-full px-4 py-2.5 border border-outline-variant/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary-container/30 focus:border-primary-container bg-surface-container-low text-on-surface placeholder:text-outline text-sm min-h-[90px] resize-none"
               placeholder="Description"
               value={formData?.description}
               onChange={handleChange}
             />
+          </div>
 
-            {/* Image Upload */}
+          {/* Image Upload */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">Update Poster Image</label>
             <input
-              className="h-10 lg:h-12 w-full bg-[#222222] text-[#e0e0e0] rounded-md cursor-pointer border border-[#333333] focus:outline-none focus:ring-2 focus:ring-[#4a90e2]"
+              className="w-full px-4 py-2 border border-outline-variant/40 rounded-xl focus:outline-none bg-surface-container-low text-on-surface-variant text-xs cursor-pointer file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-container/10 file:text-primary-container"
               type="file"
               ref={imageRef}
               onChange={handleFileChange}
             />
+          </div>
 
-            <div className="flex flex-col gap-4 text-sm text-[#e0e0e0]">
-              <h2 className="text-lg font-semibold">Refreshments And Swags</h2>
-              <div className="p-3 border bg-[#222222] h-full w-full flex flex-col gap-2">
-                {/* Refreshments Toggle Switch */}
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    id="refreshments"
-                    checked={formData?.refreshments}
-                    onChange={(e) =>
-                      handleCheckboxChange("refreshments", e.target.checked)
-                    }
-                  />
-                  <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 after:absolute after:top-1 after:left-1 after:bg-white after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-                  <span className="ml-3 text-sm font-medium text-white">
-                    Refreshments
-                  </span>
-                </label>
+          <div className="flex flex-col gap-4 text-sm text-on-surface">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Refreshments And Swags</h3>
+            <div className="p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low flex flex-col gap-3">
+              {/* Refreshments Toggle Switch */}
+              <label className="relative inline-flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium text-on-surface">
+                  Refreshments Included
+                </span>
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  id="refreshments"
+                  checked={formData?.refreshments}
+                  onChange={(e) =>
+                    handleCheckboxChange("refreshments", e.target.checked)
+                  }
+                />
+                <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
 
-                {/* Swags Toggle Switch */}
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    id="swags"
-                    checked={formData?.swags}
-                    onChange={(e) =>
-                      handleCheckboxChange("swags", e.target.checked)
-                    }
-                  />
-                  <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 after:absolute after:top-1 after:left-1 after:bg-white after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5"></div>
-                  <span className="ml-3 text-sm font-medium text-white">
-                    Swags
-                  </span>
-                </label>
-              </div>
+              {/* Swags Toggle Switch */}
+              <label className="relative inline-flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium text-on-surface">
+                  Swags Included
+                </span>
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  id="swags"
+                  checked={formData?.swags}
+                  onChange={(e) =>
+                    handleCheckboxChange("swags", e.target.checked)
+                  }
+                />
+                <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
 
-              <div className="flex flex-col gap-4">
-                <button
-                  className="w-full bg-blue-500 text-white p-2 rounded-md"
-                  disabled={isLoading}>
-                  Submit ✅
-                </button>
-              </div>
+            <div className="pt-2">
+              <button
+                className="w-full bg-primary-container hover:bg-surface-tint text-on-primary font-medium py-3 rounded-xl transition duration-200 shadow-md shadow-primary-container/20 active:scale-[0.98]"
+                disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
+              </button>
             </div>
           </div>
         </form>

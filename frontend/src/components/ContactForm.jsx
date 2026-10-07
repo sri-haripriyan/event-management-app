@@ -45,17 +45,17 @@ const ContactForm = () => {
 		setLoading(false);
 	};
   return (
-    <div className="w-full max-w-sm bg-slate-900/40 border border-white/5 rounded-3xl p-6 shadow-xl backdrop-blur-md">
-      <h3 className="text-lg font-bold text-white mb-5 flex items-center gap-2 pb-2 border-b border-slate-800">
+    <div className="w-full max-w-sm bg-surface-container-lowest border border-outline-variant/30 rounded-3xl p-6 shadow-sm">
+      <h3 className="text-lg font-bold text-on-surface mb-5 flex items-center gap-2 pb-2 border-b border-outline-variant/30">
         📧 Email Support
       </h3>
       <form onSubmit={sendEmail} className="space-y-4">
         <div className="space-y-1">
-          <label htmlFor="name" className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1">
+          <label htmlFor="name" className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">
             Name
           </label>
           <input
-            className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2.5 text-white outline-none transition text-sm focus:ring-1 focus:ring-purple-500/30"
+            className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2.5 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30"
             type="text"
             name="from_name"
             id="name"
@@ -66,11 +66,11 @@ const ContactForm = () => {
         </div>
         
         <div className="space-y-1">
-          <label htmlFor="email" className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1">
+          <label htmlFor="email" className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">
             Email Address
           </label>
           <input
-            className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2.5 text-white outline-none transition text-sm focus:ring-1 focus:ring-purple-500/30"
+            className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2.5 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30"
             type="email"
             name="from_email"
             id="email"
@@ -81,11 +81,11 @@ const ContactForm = () => {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1" htmlFor="message">
+          <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1" htmlFor="message">
             Message
           </label>
           <textarea
-            className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2.5 text-white outline-none transition text-sm focus:ring-1 focus:ring-purple-500/30 h-24 resize-none"
+            className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2.5 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30 h-24 resize-none"
             name="message"
             id="message"
             placeholder="Your feedback or support query..."
@@ -98,7 +98,7 @@ const ContactForm = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium py-2.5 rounded-xl transition duration-200 shadow-md shadow-purple-950/20 active:scale-[0.98] flex justify-center items-center h-10"
+            className="w-full bg-primary-container hover:bg-surface-tint text-on-primary font-medium py-2.5 rounded-xl transition duration-200 shadow-md shadow-primary-container/20 active:scale-[0.98] flex justify-center items-center h-10"
           >
             {loading ? <Spinner size="sm" /> : "Send Message"}
           </button>

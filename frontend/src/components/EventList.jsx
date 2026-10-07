@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import Event from "./Event";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBlogs } from "../services/api.js";
@@ -25,7 +26,7 @@ const EventList = ({ searchTerm }) => {
 
 	if (isLoading) {
 		return (
-			<div className="h-[70vh] flex justify-center items-center bg-slate-950">
+			<div className="h-[70vh] flex justify-center items-center bg-surface">
 				<Spinner />
 			</div>
 		);
@@ -48,13 +49,13 @@ const EventList = ({ searchTerm }) => {
 	});
 
 	return (
-		<div className="bg-slate-950 text-white pb-20 font-poppins">
+		<div className="bg-surface text-on-surface pb-20 font-poppins">
 			{/* Hero banner section */}
 			<div className="max-w-7xl mx-auto px-6 pt-10 pb-8 text-left">
-				<h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3 text-white select-none">
+				<h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3 text-on-surface select-none">
 					Featured Events & Meetups
 				</h1>
-				<p className="text-slate-400 text-sm sm:text-base max-w-2xl font-light leading-relaxed">
+				<p className="text-on-surface-variant text-sm sm:text-base max-w-2xl font-light leading-relaxed">
 					Discover top-tier gatherings, hackathons, and exclusive meetups in the corporate-futurist space.
 				</p>
 
@@ -70,8 +71,8 @@ const EventList = ({ searchTerm }) => {
 							onClick={() => setFilterType(item.value)}
 							className={`px-5 py-2 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 select-none ${
 								filterType === item.value
-									? "bg-purple-600 text-white shadow-md shadow-purple-950/40"
-									: "bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+									? "bg-primary-container text-on-primary shadow-sm"
+									: "bg-surface-container border border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
 							}`}
 						>
 							{item.label}
@@ -91,11 +92,11 @@ const EventList = ({ searchTerm }) => {
 						))}
 					</div>
 				) : (
-					<div className="text-center py-20 bg-slate-900/20 border border-dashed border-slate-800 rounded-3xl">
-						<p className="text-slate-500 text-lg">No events found matching your criteria.</p>
+					<div className="text-center py-20 bg-surface-container-low border border-dashed border-outline-variant/40 rounded-3xl">
+						<p className="text-on-surface-variant text-lg">No events found matching your criteria.</p>
 						<button
 							onClick={() => { setFilterType("all"); }}
-							className="mt-4 px-5 py-2 bg-slate-900 hover:bg-slate-850 text-purple-400 font-medium rounded-xl text-sm border border-slate-800 transition"
+							className="mt-4 px-5 py-2 bg-surface-container hover:bg-surface-container-high text-primary-container font-medium rounded-xl text-sm border border-outline-variant/40 transition shadow-sm"
 						>
 							Reset Filters
 						</button>
@@ -107,19 +108,19 @@ const EventList = ({ searchTerm }) => {
 			{data?.totalPages > 1 && (
 				<div className="flex justify-center items-center gap-4 mt-16">
 					<button
-						className="px-5 py-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-slate-900 disabled:cursor-not-allowed transition text-sm font-medium"
+						className="px-5 py-2 bg-surface-container border border-outline-variant/40 text-on-surface rounded-xl hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition text-sm font-medium shadow-sm"
 						onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
 						disabled={page === 1}
 					>
 						← Previous
 					</button>
 
-					<span className="text-slate-400 text-sm font-semibold">
-						Page <span className="text-white">{page}</span> of <span className="text-white">{data?.totalPages}</span>
+					<span className="text-on-surface-variant text-sm font-semibold">
+						Page <span className="text-on-surface font-bold">{page}</span> of <span className="text-on-surface font-bold">{data?.totalPages}</span>
 					</span>
 
 					<button
-						className="px-5 py-2 bg-slate-900 border border-slate-800 text-slate-300 rounded-xl hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-slate-900 disabled:cursor-not-allowed transition text-sm font-medium"
+						className="px-5 py-2 bg-surface-container border border-outline-variant/40 text-on-surface rounded-xl hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition text-sm font-medium shadow-sm"
 						onClick={() => setPage((prev) => prev + 1)}
 						disabled={page >= data?.totalPages}
 					>

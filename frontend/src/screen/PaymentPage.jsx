@@ -145,27 +145,27 @@ const PaymentPage = () => {
 	};
 
 	return (
-		<div className="flex flex-col gap-5 justify-center items-center min-h-screen rounded-fullp-4 sm:p-8 relative text-sm md:text-base lg:text-lg">
+		<div className="flex flex-col gap-5 justify-center items-center min-h-screen bg-surface font-poppins text-on-surface p-4 sm:p-8 relative text-sm md:text-base">
 			<MdOutlineArrowBackIosNew
 				size={20}
 				onClick={() => navigate("/events")}
-				className="cursor-pointer transition-all text-gray-400 ease-in-out hover:scale-150  rounded-full absolute left-4 top-4"
+				className="cursor-pointer transition-all text-on-surface-variant hover:text-on-surface ease-in-out hover:scale-125 rounded-full absolute left-6 top-6"
 			/>
 
-			<div className=" first-line:w-5/6 md:w-1/2 flex flex-col justify-around items-center bg-zinc-900 p-4 gap-2  rounded-lg">
-				<div className="w-full flex flex-col gap-2">
+			<div className="w-full max-w-xl flex flex-col justify-around items-center bg-surface-container-lowest border border-outline-variant/30 p-6 sm:p-8 gap-4 rounded-3xl shadow-sm">
+				<div className="w-full flex flex-col gap-3">
 					<input
 						type="text"
 						placeholder="Enter Your Name"
 						value={name}
-						className="p-2 w-full text-gray-700 rounded-lg bg-white "
+						className="p-3 w-full text-on-surface rounded-xl bg-surface-container-low border border-outline-variant/40 focus:border-primary-container outline-none placeholder:text-outline text-sm"
 						onChange={(e) => setName(e.target.value)}
 					/>
 					<input
 						type="email"
 						placeholder="Enter Your Email"
 						value={email}
-						className="p-2 w-full text-gray-700 rounded-lg bg-white "
+						className="p-3 w-full text-on-surface rounded-xl bg-surface-container-low border border-outline-variant/40 focus:border-primary-container outline-none placeholder:text-outline text-sm"
 						onChange={(e) => setEmail(e.target.value)}
 					/>
 					<input
@@ -173,19 +173,19 @@ const PaymentPage = () => {
 						placeholder="Enter Your Mobile Number"
 						value={mobile}
 						required
-						className="p-2 w-full text-gray-700 rounded-lg bg-white "
+						className="p-3 w-full text-on-surface rounded-xl bg-surface-container-low border border-outline-variant/40 focus:border-primary-container outline-none placeholder:text-outline text-sm"
 						onChange={(e) => setMobile(e.target.value)}
 					/>
 				</div>
-				<div className="h-full w-full flex ">
+				<div className="h-full w-full flex">
 					{dropDown?.length === 0 ? (
-						<h1 className="text-white h-4/5 w-full flex gap-2 ">
+						<h1 className="text-on-surface-variant text-sm font-medium w-full text-center py-2">
 							You have applied for all sub-events in this event
 						</h1>
 					) : (
 						<select
 							onChange={handleChange}
-							className="w-full flex gap-2 p-2 rounded-md bg-white text-black"
+							className="w-full p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface outline-none text-sm"
 							value={selectedEvent}
 						>
 							<option value="" className="p-2" disabled>
@@ -200,21 +200,21 @@ const PaymentPage = () => {
 					)}
 				</div>
 
-				<div className="mt-4 w-full flex flex-col gap-2">
-					<h1 className="text-white text-lg">
+				<div className="mt-2 w-full flex flex-col gap-3">
+					<h2 className="text-on-surface text-base font-semibold">
 						{!selectedEvent
 							? `Please select an event for payment`
 							: `Payment for ${selectedEventName}`}
-					</h1>
+					</h2>
 					{!selectedEvent ? (
-						<h1 className="p-2 w-full text-gray-500 rounded-lg bg-white text-center">
-							{eventDetails?.event?.amount}
-						</h1>
+						<div className="p-3 w-full text-on-surface-variant rounded-xl bg-surface-container-low border border-outline-variant/30 text-center font-semibold">
+							₹{eventDetails?.event?.amount || 0}
+						</div>
 					) : (
 						<button
-							className={`p-2 rounded-lg w-full ${
-								loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-700"
-							} text-white`}
+							className={`p-3 rounded-xl w-full ${
+								loading ? "bg-surface-container-high text-on-surface-variant cursor-not-allowed" : "bg-primary-container hover:bg-surface-tint text-on-primary shadow-md shadow-primary-container/20"
+							} font-medium transition duration-200 active:scale-[0.98]`}
 							onClick={handlePayment}
 							disabled={loading}
 						>
@@ -223,22 +223,23 @@ const PaymentPage = () => {
 					)}
 				</div>
 			</div>
-			<div className="w-full flex justify-center items-center">
-				<ul className="w-5/6 md:w-1/2 flex flex-col  rounded-lg gap-2 p-2 text-white bg-gray-400">
-					{appliedEvents?.groupIds &&
-						appliedEvents?.groupIds?.map((event) => {
+			{appliedEvents?.groupIds && appliedEvents.groupIds.length > 0 && (
+				<div className="w-full max-w-xl flex flex-col justify-center items-center">
+					<ul className="w-full flex flex-col rounded-2xl gap-2 p-3 text-on-surface bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
+						{appliedEvents.groupIds.map((event) => {
 							return (
 								<li
-									className="flex gap-2 justify-between bg-zinc-700 p-2 rounded-lg"
+									className="flex gap-2 justify-between items-center bg-surface-container-low border border-outline-variant/20 p-3 rounded-xl text-sm font-medium"
 									key={event?._id}
 								>
-									<h1>{event?.name}</h1>
-									<TiTick color="green" size={20} />
+									<span>{event?.name}</span>
+									<TiTick className="text-emerald-600" size={20} />
 								</li>
 							);
 						})}
-				</ul>
-			</div>
+					</ul>
+				</div>
+			)}
 		</div>
 	);
 };

@@ -68,15 +68,15 @@ const Event = ({ event, toDisplay }) => {
 	}
 
 	return (
-		<div className="glass-card group shadow-[0_8px_30px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden select-none flex flex-col justify-between h-full hover:scale-[1.01] hover:border-purple-500/25 duration-350 bg-slate-900/10 border border-white/5">
-			<div className="relative aspect-[16/10] w-full overflow-hidden border-b border-white/5">
+		<div className="group shadow-sm rounded-2xl overflow-hidden select-none flex flex-col justify-between h-full hover:shadow-md hover:border-primary-container/40 transition-all duration-300 bg-surface-container-lowest border border-outline-variant/30">
+			<div className="relative aspect-[16/10] w-full overflow-hidden border-b border-surface-container-high">
 				{/* Status Overlay Badge */}
 				{statusBadge && (
 					<span
 						className={`absolute top-3 left-3 text-[10px] font-extrabold px-2.5 py-1 rounded-md tracking-wider uppercase z-10 select-none ${
 							statusBadge.type === "live"
-								? "bg-cyan-400 text-slate-950 shadow-[0_0_12px_rgba(34,211,238,0.4)]"
-								: "bg-orange-400 text-slate-950 shadow-[0_0_12px_rgba(251,146,60,0.4)]"
+								? "bg-cyan-500 text-white shadow-sm"
+								: "bg-orange-500 text-white shadow-sm"
 						}`}
 					>
 						{statusBadge.text}
@@ -85,11 +85,11 @@ const Event = ({ event, toDisplay }) => {
 
 				{/* Price / Free Badge */}
 				{event?.paid ? (
-					<span className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md border border-slate-700/50 text-white text-[11px] font-semibold px-3 py-1 rounded-full z-10 select-none">
+					<span className="absolute top-3 right-3 bg-primary-container text-on-primary text-[11px] font-semibold px-3 py-1 rounded-full z-10 select-none shadow-sm">
 						₹{event?.amount}
 					</span>
 				) : (
-					<span className="absolute top-3 right-3 bg-cyan-950/80 backdrop-blur-md border border-cyan-500/30 text-cyan-400 text-[11px] font-semibold px-3 py-1 rounded-full z-10 select-none">
+					<span className="absolute top-3 right-3 bg-secondary-container text-on-secondary-container text-[11px] font-semibold px-3 py-1 rounded-full z-10 select-none shadow-sm">
 						Free
 					</span>
 				)}
@@ -106,29 +106,29 @@ const Event = ({ event, toDisplay }) => {
 			<div className="p-5 flex-grow flex flex-col justify-between">
 				<div>
 					{/* Date-Time Row */}
-					<div className="flex items-center gap-2 text-xs text-slate-400 mb-2.5">
-						<FiCalendar className="text-slate-500 text-sm" />
+					<div className="flex items-center gap-2 text-xs text-on-surface-variant mb-2.5">
+						<FiCalendar className="text-outline text-sm" />
 						<span>{formatEventDateTime(event?.eventDate, event?.startTime)}</span>
 					</div>
 
 					{/* Title */}
-					<h2 className="text-xl font-bold text-white mb-4 group-hover:text-purple-400 transition-colors duration-200 truncate">
+					<h2 className="text-xl font-bold text-on-surface mb-4 group-hover:text-primary-container transition-colors duration-200 truncate">
 						<Link to={`/events/${event?._id}`}>{event?.title || "Untitled Event"}</Link>
 					</h2>
 				</div>
 
 				{toDisplay && (
-					<div className="mt-2 w-full pt-4 border-t border-white/5 flex items-center justify-between">
+					<div className="mt-2 w-full pt-4 border-t border-surface-container-high flex items-center justify-between">
 						{/* User Info */}
 						<div className="flex items-center gap-2">
-							<div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-white/10">
+							<div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-outline-variant/50">
 								<Avatar
 									size="sm"
 									imageUrl={event?.userId?.profile_image_url}
 									name={event?.userId?.userName}
 								/>
 							</div>
-							<span className="text-slate-400 text-xs font-medium truncate max-w-[80px] sm:max-w-[120px]">
+							<span className="text-on-surface-variant text-xs font-medium truncate max-w-[80px] sm:max-w-[120px]">
 								{event?.userId?.userName}
 							</span>
 						</div>
@@ -136,20 +136,20 @@ const Event = ({ event, toDisplay }) => {
 						{/* Stats */}
 						<div className="flex items-center gap-4 text-xs">
 							{/* Likes */}
-							<div className="flex items-center gap-1.5 text-slate-400 hover:text-red-400 transition cursor-pointer" onClick={handleLike}>
+							<div className="flex items-center gap-1.5 text-on-surface-variant hover:text-red-500 transition cursor-pointer" onClick={handleLike}>
 								<FaHeart
 									size={14}
 									className={`transition-transform active:scale-75 duration-200 ${
-										isLiked ? "text-red-500" : "text-slate-500"
+										isLiked ? "text-red-500" : "text-outline"
 									}`}
 								/>
-								<span className="text-slate-400 font-medium">{formatCount(likeCount)}</span>
+								<span className="text-on-surface-variant font-medium">{formatCount(likeCount)}</span>
 							</div>
 
 							{/* Comments */}
-							<div className="flex items-center gap-1.5 text-slate-400">
-								<MdModeComment size={14} className="text-slate-500" />
-								<span className="text-slate-400 font-medium">
+							<div className="flex items-center gap-1.5 text-on-surface-variant">
+								<MdModeComment size={14} className="text-outline" />
+								<span className="text-on-surface-variant font-medium">
 									{formatCount(event?.comments || 0)}
 								</span>
 							</div>

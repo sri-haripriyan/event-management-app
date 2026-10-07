@@ -40,12 +40,12 @@ const EventOptions = ({ event }) => {
 
 	return (
 		<div
-			className="absolute right-2 sm:right-4 top-4  text-white select-none"
+			className="absolute right-2 sm:right-4 top-4 text-on-surface-variant hover:text-on-surface select-none"
 			onClick={() => setIsDropdown((prev) => !prev)}
 		>
 			<SlOptionsVertical className="text-lg cursor-pointer" />
 			<div
-				className={`absolute font-roboto border-2 border-gray-500 right-4 text-left bg-white w-28 py-3 shadow-lg shadow-slate-700 rounded-md transform origin-top-right transition-transform  duration-200 ${
+				className={`absolute font-poppins border border-outline-variant/30 right-4 text-left bg-surface-container-lowest w-32 py-2 shadow-lg rounded-xl transform origin-top-right transition-transform duration-200 z-30 ${
 					isDropdown ? "scale-100 opacity-100" : "scale-0 opacity-0"
 				} `}
 			>

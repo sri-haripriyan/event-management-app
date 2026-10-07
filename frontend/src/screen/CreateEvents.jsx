@@ -160,7 +160,7 @@ const CreateEvents = () => {
     return (
       <button
         onClick={() => navigate(-1)}
-        className="group flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl transition text-sm font-medium self-start"
+        className="group flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 text-on-surface rounded-xl transition text-sm font-medium self-start"
       >
         <span className="transform group-hover:-translate-x-0.5 transition-transform">←</span> Back
       </button>
@@ -168,12 +168,12 @@ const CreateEvents = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex justify-center items-center py-10 px-4 font-poppins text-white">
+    <div className="min-h-screen bg-surface flex justify-center items-center py-10 px-4 font-poppins text-on-surface">
       {/* Background decorations */}
-      <div className="absolute top-10 left-10 w-72 h-72 bg-purple-600/5 rounded-full blur-[80px]"></div>
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-indigo-600/5 rounded-full blur-[80px]"></div>
+      <div className="absolute top-10 left-10 w-72 h-72 bg-primary-container/5 rounded-full blur-[80px] pointer-events-none"></div>
+      <div className="absolute bottom-10 right-10 w-72 h-72 bg-secondary-container/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-      <div className="w-full max-w-2xl bg-slate-900/40 backdrop-blur-xl border border-white/5 p-6 sm:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col gap-8 z-10">
+      <div className="w-full max-w-2xl bg-surface-container-lowest border border-outline-variant/30 p-6 sm:p-10 rounded-3xl shadow-sm flex flex-col gap-8 z-10">
         <BackButton />
 
         {/* Step Progress Timeline */}
@@ -187,22 +187,22 @@ const CreateEvents = () => {
                 {index > 0 && (
                   <div
                     className={`absolute top-5 -left-1/2 h-[2px] transition-all duration-500 -translate-y-1/2 ${
-                      step > index ? "bg-gradient-to-r from-purple-500 to-indigo-500" : "bg-slate-800"
+                      step > index ? "bg-primary-container" : "bg-outline-variant/30"
                     }`}
                     style={{ width: "100%" }}
                   />
                 )}
                 <div
-                  className={`z-10 w-10 h-10 flex items-center justify-center rounded-xl text-white text-base transition-all duration-500 border ${
+                  className={`z-10 w-10 h-10 flex items-center justify-center rounded-xl text-base transition-all duration-500 border ${
                     isCompleted || isActive
-                      ? "bg-gradient-to-br from-purple-500 to-indigo-600 border-transparent shadow-[0_0_15px_rgba(168,85,247,0.3)]"
-                      : "bg-slate-950 border-slate-800 text-slate-500"
+                      ? "bg-primary-container text-on-primary border-transparent shadow-sm"
+                      : "bg-surface-container-low border-outline-variant/30 text-on-surface-variant"
                   }`}
                 >
                   {isCompleted ? <FaCheck size={14} /> : <Icon size={16} />}
                 </div>
                 <span className={`text-xs mt-2 font-medium tracking-wide transition-colors duration-300 hidden sm:block ${
-                  isActive ? "text-purple-400 font-semibold" : isCompleted ? "text-slate-300" : "text-slate-600"
+                  isActive ? "text-primary-container font-semibold" : isCompleted ? "text-on-surface font-medium" : "text-on-surface-variant"
                 }`}>
                   {stepItem.label}
                 </span>
@@ -218,55 +218,55 @@ const CreateEvents = () => {
           {step === 1 && (
             <div className="space-y-5 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Event Details</h2>
-                <p className="text-slate-400 text-xs font-light">Set up the core details of your event poster and schedule</p>
+                <h2 className="text-xl font-bold text-on-surface mb-1">Event Details</h2>
+                <p className="text-on-surface-variant text-xs font-normal">Set up the core details of your event poster and schedule</p>
               </div>
 
               {/* Event Name Input */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1">Event Name</label>
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">Event Name</label>
                 <input
                   type="text"
                   placeholder="Enter the main title"
                   value={formData?.eventName}
                   onChange={(e) => handleChange("eventName", e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-3 text-white outline-none transition text-sm focus:ring-1 focus:ring-purple-500/30"
+                  className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-3 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30"
                   required
                 />
               </div>
 
               {/* Description Input */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1">Description</label>
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">Description</label>
                 <textarea
                   placeholder="Describe your event agenda, rules, and timings..."
                   value={formData?.description}
                   onChange={(e) => handleChange("description", e.target.value)}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-3 text-white outline-none transition text-sm focus:ring-1 focus:ring-purple-500/30 h-24 resize-none"
+                  className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-3 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30 h-24 resize-none"
                   required
                 />
               </div>
 
               {/* Image poster upload */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1">Event Poster Image</label>
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1">Event Poster Image</label>
                 <input
                   type="file"
                   name="imageUrl"
                   ref={imageRef}
                   onChange={handleFileChange}
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2.5 text-slate-400 text-xs file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20 file:cursor-pointer cursor-pointer focus:ring-1 focus:ring-purple-500/30"
+                  className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2.5 text-on-surface-variant text-xs file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-container/10 file:text-primary-container hover:file:bg-primary-container/20 file:cursor-pointer cursor-pointer focus:ring-1 focus:ring-primary-container/30"
                   required
                 />
               </div>
 
               {/* Datepicker */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1 block">Event Date</label>
+                <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1 block">Event Date</label>
                 <DatePicker
                   selected={formData?.eventDate}
                   placeholderText="Select date"
-                  className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-3 text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30 cursor-pointer"
+                  className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-3 text-on-surface outline-none text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30 cursor-pointer"
                   onChange={(date) => handleChange("eventDate", date)}
                   required
                 />
@@ -275,7 +275,7 @@ const CreateEvents = () => {
               {/* Timings */}
               <div className="flex gap-4">
                 <div className="w-1/2 space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1 block">Start Time</label>
+                  <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1 block">Start Time</label>
                   <DatePicker
                     showTimeSelect
                     placeholderText="--:--"
@@ -284,12 +284,12 @@ const CreateEvents = () => {
                     dateFormat="HH:mm"
                     selected={formData?.startTime}
                     onChange={(time) => handleChange("startTime", time)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-3 text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30 cursor-pointer"
+                    className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-3 text-on-surface outline-none text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30 cursor-pointer"
                     required
                   />
                 </div>
                 <div className="w-1/2 space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-1 block">End Time</label>
+                  <label className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider pl-1 block">End Time</label>
                   <DatePicker
                     showTimeSelect
                     placeholderText="--:--"
@@ -298,7 +298,7 @@ const CreateEvents = () => {
                     dateFormat="HH:mm"
                     selected={formData?.endTime}
                     onChange={(time) => handleChange("endTime", time)}
-                    className="w-full bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-3 text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30 cursor-pointer"
+                    className="w-full bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-3 text-on-surface outline-none text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30 cursor-pointer"
                     required
                   />
                 </div>
@@ -309,7 +309,7 @@ const CreateEvents = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-medium transition duration-200 text-sm flex items-center gap-1.5 active:scale-[0.98]"
+                  className="px-6 py-2.5 bg-primary-container hover:bg-surface-tint text-on-primary rounded-xl font-medium transition duration-200 text-sm flex items-center gap-1.5 active:scale-[0.98] shadow-sm"
                 >
                   Continue <span>→</span>
                 </button>
@@ -321,13 +321,13 @@ const CreateEvents = () => {
           {step === 2 && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Sub-Events Breakdown</h2>
-                <p className="text-slate-400 text-xs font-light">Add custom tracks (limit 5 per category) with attendance seating limits</p>
+                <h2 className="text-xl font-bold text-on-surface mb-1">Sub-Events Breakdown</h2>
+                <p className="text-on-surface-variant text-xs font-normal">Add custom tracks (limit 5 per category) with attendance seating limits</p>
               </div>
 
               {/* Technical Events */}
               <div className="space-y-3">
-                <h3 className="text-sm font-bold text-purple-400 pl-1 uppercase tracking-wider">Technical Sub-events</h3>
+                <h3 className="text-sm font-bold text-primary-container pl-1 uppercase tracking-wider">Technical Sub-events</h3>
                 <div className="flex gap-2.5 items-center">
                   <input
                     type="text"
@@ -335,7 +335,7 @@ const CreateEvents = () => {
                     value={formData?.technicalInput}
                     maxLength={20}
                     onChange={(e) => updateInput("technicalInput", e.target.value)}
-                    className="flex-grow bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2.5 text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30"
+                    className="flex-grow bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2.5 text-on-surface outline-none text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30"
                   />
                   <input
                     type="number"
@@ -348,12 +348,12 @@ const CreateEvents = () => {
                       })
                     }
                     min={1}
-                    className="w-20 bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-2 py-2.5 text-center text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30"
+                    className="w-20 bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-2 py-2.5 text-center text-on-surface outline-none text-sm focus:ring-1 focus:ring-primary-container/30"
                   />
                   <button
                     type="button"
                     onClick={() => addEvent("technical", formData?.technicalInput, formData?.technicalLimitInput)}
-                    className="h-10 w-10 flex items-center justify-center bg-slate-900 border border-slate-800 hover:border-slate-700 text-purple-400 rounded-xl text-lg font-bold transition duration-200"
+                    className="h-10 w-10 flex items-center justify-center bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 text-primary-container rounded-xl text-lg font-bold transition duration-200"
                   >
                     +
                   </button>
@@ -362,15 +362,15 @@ const CreateEvents = () => {
                 {/* Sub-event Chips grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1.5">
                   {formData?.technical.map((event, index) => (
-                    <div key={index} className="flex justify-between items-center bg-slate-950 border border-slate-800/80 pl-3.5 pr-2 py-2 rounded-xl text-xs">
-                      <div className="flex flex-col gap-0.5 text-slate-300 font-medium">
+                    <div key={index} className="flex justify-between items-center bg-surface-container-low border border-outline-variant/20 pl-3.5 pr-2 py-2 rounded-xl text-xs">
+                      <div className="flex flex-col gap-0.5 text-on-surface font-medium">
                         <span>{event?.name}</span>
-                        <span className="text-[10px] text-slate-500 font-semibold uppercase">Limit: {event?.limit}</span>
+                        <span className="text-[10px] text-on-surface-variant font-semibold uppercase">Limit: {event?.limit}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => deleteEvent("technical", index)}
-                        className="text-slate-500 hover:text-white p-1 transition"
+                        className="text-on-surface-variant hover:text-error p-1 transition"
                       >
                         ✕
                       </button>
@@ -380,8 +380,8 @@ const CreateEvents = () => {
               </div>
 
               {/* Non-Technical Events */}
-              <div className="space-y-3 pt-3 border-t border-slate-800/40">
-                <h3 className="text-sm font-bold text-indigo-400 pl-1 uppercase tracking-wider">Non-technical Sub-events</h3>
+              <div className="space-y-3 pt-3 border-t border-outline-variant/20">
+                <h3 className="text-sm font-bold text-secondary-lumina pl-1 uppercase tracking-wider">Non-technical Sub-events</h3>
                 <div className="flex gap-2.5 items-center">
                   <input
                     type="text"
@@ -389,7 +389,7 @@ const CreateEvents = () => {
                     value={formData?.nonTechnicalInput}
                     maxLength={20}
                     onChange={(e) => updateInput("nonTechnicalInput", e.target.value)}
-                    className="flex-grow bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2.5 text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30"
+                    className="flex-grow bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2.5 text-on-surface outline-none text-sm placeholder:text-outline focus:ring-1 focus:ring-primary-container/30"
                   />
                   <input
                     type="number"
@@ -402,12 +402,12 @@ const CreateEvents = () => {
                       })
                     }
                     min={1}
-                    className="w-20 bg-slate-950/60 border border-slate-800 focus:border-purple-500 rounded-xl px-2 py-2.5 text-center text-white outline-none text-sm focus:ring-1 focus:ring-purple-500/30"
+                    className="w-20 bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-2 py-2.5 text-center text-on-surface outline-none text-sm focus:ring-1 focus:ring-primary-container/30"
                   />
                   <button
                     type="button"
                     onClick={() => addEvent("nonTechnical", formData?.nonTechnicalInput, formData?.nonTechnicalLimitInput)}
-                    className="h-10 w-10 flex items-center justify-center bg-slate-900 border border-slate-800 hover:border-slate-700 text-indigo-400 rounded-xl text-lg font-bold transition duration-200"
+                    className="h-10 w-10 flex items-center justify-center bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 text-secondary-lumina rounded-xl text-lg font-bold transition duration-200"
                   >
                     +
                   </button>
@@ -416,15 +416,15 @@ const CreateEvents = () => {
                 {/* Sub-event Chips grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1.5">
                   {formData?.nonTechnical.map((event, index) => (
-                    <div key={index} className="flex justify-between items-center bg-slate-950 border border-slate-800/80 pl-3.5 pr-2 py-2 rounded-xl text-xs">
-                      <div className="flex flex-col gap-0.5 text-slate-300 font-medium">
+                    <div key={index} className="flex justify-between items-center bg-surface-container-low border border-outline-variant/20 pl-3.5 pr-2 py-2 rounded-xl text-xs">
+                      <div className="flex flex-col gap-0.5 text-on-surface font-medium">
                         <span>{event?.name}</span>
-                        <span className="text-[10px] text-slate-500 font-semibold uppercase">Limit: {event?.limit}</span>
+                        <span className="text-[10px] text-on-surface-variant font-semibold uppercase">Limit: {event?.limit}</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => deleteEvent("nonTechnical", index)}
-                        className="text-slate-500 hover:text-white p-1 transition"
+                        className="text-on-surface-variant hover:text-error p-1 transition"
                       >
                         ✕
                       </button>
@@ -438,14 +438,14 @@ const CreateEvents = () => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-5 py-2.5 bg-slate-900 border border-slate-850 hover:border-slate-700 text-slate-300 rounded-xl text-sm font-medium transition active:scale-[0.98]"
+                  className="px-5 py-2.5 bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 text-on-surface rounded-xl text-sm font-medium transition active:scale-[0.98]"
                 >
                   ← Back
                 </button>
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-medium transition duration-200 text-sm flex items-center gap-1.5 active:scale-[0.98]"
+                  className="px-6 py-2.5 bg-primary-container hover:bg-surface-tint text-on-primary rounded-xl font-medium transition duration-200 text-sm flex items-center gap-1.5 active:scale-[0.98] shadow-sm"
                 >
                   Continue <span>→</span>
                 </button>
@@ -457,18 +457,18 @@ const CreateEvents = () => {
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-white mb-1">Inclusions & Tickets</h2>
-                <p className="text-slate-400 text-xs font-light">Set up refreshments, swags, and ticket prices for registration</p>
+                <h2 className="text-xl font-bold text-on-surface mb-1">Inclusions & Tickets</h2>
+                <p className="text-on-surface-variant text-xs font-normal">Set up refreshments, swags, and ticket prices for registration</p>
               </div>
 
               {/* Inclusions */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4">
-                <h3 className="text-xs uppercase font-bold text-slate-500 tracking-wider">Event Inclusions</h3>
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 space-y-4 shadow-sm">
+                <h3 className="text-xs uppercase font-bold text-on-surface-variant tracking-wider">Event Inclusions</h3>
                 
                 <div className="flex flex-col gap-3">
                   {/* Refreshments */}
                   <label className="relative flex items-center justify-between cursor-pointer p-1">
-                    <span className="text-sm font-medium text-slate-200">Provide Refreshments</span>
+                    <span className="text-sm font-medium text-on-surface">Provide Refreshments</span>
                     <input
                       type="checkbox"
                       className="sr-only peer"
@@ -476,12 +476,12 @@ const CreateEvents = () => {
                       checked={formData?.refreshments}
                       onChange={(e) => handleChangefoods("refreshments", e.target.value)}
                     />
-                    <div className="w-11 h-6 bg-slate-800 rounded-full peer peer-checked:bg-purple-600 after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                    <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                   </label>
 
                   {/* Swags */}
                   <label className="relative flex items-center justify-between cursor-pointer p-1">
-                    <span className="text-sm font-medium text-slate-200">Provide Swags / Merch</span>
+                    <span className="text-sm font-medium text-on-surface">Provide Swags / Merch</span>
                     <input
                       type="checkbox"
                       className="sr-only peer"
@@ -489,15 +489,15 @@ const CreateEvents = () => {
                       checked={formData?.swags}
                       onChange={(e) => handleChangefoods("swags", e.target.value)}
                     />
-                    <div className="w-11 h-6 bg-slate-800 rounded-full peer peer-checked:bg-purple-600 after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                    <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                   </label>
                 </div>
               </div>
 
               {/* Payments */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 space-y-4 shadow-sm">
                 <label className="relative flex items-center justify-between cursor-pointer p-1">
-                  <span className="text-sm font-bold text-slate-200 uppercase tracking-wider text-xs">Paid Ticket Required</span>
+                  <span className="text-sm font-bold text-on-surface uppercase tracking-wider text-xs">Paid Ticket Required</span>
                   <input
                     type="checkbox"
                     className="sr-only peer"
@@ -505,12 +505,12 @@ const CreateEvents = () => {
                     checked={formData?.paid}
                     onChange={(e) => handleChangefoods("paid", e.target.value)}
                   />
-                  <div className="w-11 h-6 bg-slate-800 rounded-full peer peer-checked:bg-purple-600 after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                  <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                 </label>
 
                 {formData?.paid && (
-                  <div className="flex justify-between items-center gap-4 pt-3 border-t border-slate-800/40 animate-fade-in">
-                    <label htmlFor="amount" className="text-sm text-slate-400">
+                  <div className="flex justify-between items-center gap-4 pt-3 border-t border-outline-variant/20 animate-fade-in">
+                    <label htmlFor="amount" className="text-sm text-on-surface-variant font-medium">
                       Ticket Price (INR)
                     </label>
                     <input
@@ -521,7 +521,7 @@ const CreateEvents = () => {
                       min={1}
                       max={5000}
                       onChange={(e) => handleChangefoods("amount", e.target.value)}
-                      className="w-1/2 bg-slate-950 border border-slate-800 focus:border-purple-500 rounded-xl px-4 py-2 text-white text-right outline-none text-sm focus:ring-1 focus:ring-purple-500/30"
+                      className="w-1/2 bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2 text-on-surface text-right outline-none text-sm focus:ring-1 focus:ring-primary-container/30"
                       placeholder="Amount"
                       required
                     />
@@ -534,13 +534,13 @@ const CreateEvents = () => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="px-5 py-2.5 bg-slate-900 border border-slate-850 hover:border-slate-700 text-slate-300 rounded-xl text-sm font-medium transition active:scale-[0.98]"
+                  className="px-5 py-2.5 bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 text-on-surface rounded-xl text-sm font-medium transition active:scale-[0.98]"
                 >
                   ← Back
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-semibold transition text-sm shadow-lg shadow-purple-950/20 active:scale-[0.98] min-w-[120px] flex items-center justify-center"
+                  className="px-6 py-2.5 bg-primary-container hover:bg-surface-tint text-on-primary rounded-xl font-semibold transition text-sm shadow-md shadow-primary-container/20 active:scale-[0.98] min-w-[120px] flex items-center justify-center"
                   disabled={isPending}
                 >
                   {isPending ? <Spinner size="sm" /> : "Publish Event 🚀"}
