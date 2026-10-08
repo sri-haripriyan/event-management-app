@@ -65,17 +65,15 @@ const Header = () => {
     null;
 
   const navLinkClass = ({ isActive }) =>
-    `font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${
-      isActive
-        ? "bg-primary-container text-on-primary font-semibold shadow-sm"
-        : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+    `font-label-md text-label-md px-3 py-1.5 rounded-lg transition-colors ${isActive
+      ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
     }`;
 
   const mobileNavLinkClass = ({ isActive }) =>
-    `font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${
-      isActive
-        ? "bg-primary-container text-on-primary font-semibold"
-        : "text-on-surface-variant hover:bg-surface-container"
+    `font-label-md text-label-md px-4 py-3 rounded-lg transition-colors flex items-center justify-between ${isActive
+      ? "bg-primary-container text-on-primary font-semibold"
+      : "text-on-surface-variant hover:bg-surface-container"
     }`;
 
   return (
@@ -214,7 +212,7 @@ const Header = () => {
             <input
               value={internalSearchValue}
               onChange={handleSearchChange}
-              className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest border border-outline-variant/30"
+              className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm active:outline-none focus:outline-none border border-outline-variant/30"
               placeholder="Search events, spaces, organizers..."
               type="text"
             />
