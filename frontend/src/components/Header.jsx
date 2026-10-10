@@ -106,7 +106,7 @@ const Header = () => {
               {/* My Tickets, Schedule, and Community are only visible when user is logged in */}
               {user && (
                 <>
-                  <NavLink to="/profile" className={navLinkClass}>
+                  <NavLink to="/myTickets" className={navLinkClass}>
                     My Tickets
                   </NavLink>
                   <Link
@@ -241,7 +241,7 @@ const Header = () => {
             {user && (
               <>
                 <NavLink
-                  to="/profile"
+                  to="/myTickets"
                   onClick={() => setMobileMenuOpen(false)}
                   className={mobileNavLinkClass}
                 >

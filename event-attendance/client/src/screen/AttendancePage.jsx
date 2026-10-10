@@ -144,11 +144,13 @@ const AttendancePage = () => {
 										<td className=" p-2">{applicant?.userName}</td>
 										<td>{applicant?.email}</td>
 										<td className="flex flex-wrap gap-2 justify-center">
-											{applicant?.appliedTo.map((group) => (
-												<span className="block" key={group}>
-													{group + ","}
-												</span>
-											))}
+											{Array.isArray(applicant?.appliedTo)
+												? applicant?.appliedTo.map((group) => (
+														<span className="block" key={group}>
+															{group + ","}
+														</span>
+												  ))
+												: <span>{applicant?.appliedTo}</span>}
 										</td>
 										<td
 											className={`${
@@ -197,9 +199,11 @@ const AttendancePage = () => {
 									<p>E-mail: {scannedUser?.data?.email}</p>
 									<p>
 										Registered to:{" "}
-										{scannedUser?.data?.appliedTo.map((subEvent, i) => (
-											<span key={i}>{subEvent + ", "}</span>
-										))}
+										{Array.isArray(scannedUser?.data?.appliedTo)
+											? scannedUser?.data?.appliedTo.map((subEvent, i) => (
+													<span key={i}>{subEvent + ", "}</span>
+											  ))
+											: <span>{scannedUser?.data?.appliedTo}</span>}
 									</p>
 								</div>
 							)}

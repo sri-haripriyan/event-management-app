@@ -81,6 +81,12 @@ export const getPanelData = () =>
     .get(`${BASE_URL}/api/profile`, { withCredentials: true })
     .then((res) => res.data);
 
+// Scan ticket / Check-in validation
+export const scanTicketCheckIn = (payload) =>
+  axios
+    .post(`${BASE_URL}/api/profile/scan-ticket`, payload, { withCredentials: true })
+    .then((res) => res.data);
+
 // Fetch comments
 export const commentsFetch = (blogId) =>
   axios

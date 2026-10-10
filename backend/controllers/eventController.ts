@@ -2,15 +2,8 @@ import { InputFile } from "node-appwrite/file";
 import Event from "../models/eventModel.js";
 import Group from "../models/groupModel.js";
 import logger from "../utils/logger.js";
-import { Client, ID, Storage } from "node-appwrite";
-import dotenv from "dotenv";
-dotenv.config();
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setSession(process.env.APPWRITE_API);
-
-const storage = new Storage(client);
+import { ID } from "node-appwrite";
+import { storage, bucketId, projectId, endpoint } from "../configs/appwrite.js";
 
 export const createEvent = async (req, res) => {
   try {
@@ -19,11 +12,11 @@ export const createEvent = async (req, res) => {
     const nonTechnical = JSON.parse(body.nonTechnicalEvents);
 
     const r = await storage.createFile(
-      process.env.APPWRITE_BUCKET_ID || "",
+      bucketId,
       ID.unique(),
       InputFile.fromBuffer(req.file.buffer, req.file.originalname || "name")
     );
-    const link = `${process.env.APPWRITE_ENDPOINT}/storage/buckets/${process.env.APPWRITE_BUCKET_ID}/files/${r.$id}/view?project=${process.env.APPWRITE_PROJECT_ID}`;
+    const link = `${endpoint}/storage/buckets/${bucketId}/files/${r.$id}/view?project=${projectId}`;
     const event = new Event({
       title: body.title,
       description: body.description,
@@ -102,21 +95,18 @@ export const updateEvent = async (req, res) => {
     if (req.file) {
       if (req.file && event.fileId) {
         try {
-          await storage.getFile(process.env.APPWRITE_BUCKET_ID, event.fileId);
-          await storage.deleteFile(
-            process.env.APPWRITE_BUCKET_ID,
-            event.fileId
-          );
+          await storage.getFile(bucketId, event.fileId);
+          await storage.deleteFile(bucketId, event.fileId);
         } catch (error) {
           console.warn("File not found, skipping delete.");
         }
       }
       const r = await storage.createFile(
-        process.env.APPWRITE_BUCKET_ID || "",
+        bucketId,
         ID.unique(),
         InputFile.fromBuffer(req.file.buffer, req.file.originalname || "name")
       );
-      const link = `https://cloud.appwrite.io/v1/storage/buckets/${process.env.APPWRITE_BUCKET_ID}/files/${r.$id}/view?project=${process.env.ProjectId}`;
+      const link = `${endpoint}/storage/buckets/${bucketId}/files/${r.$id}/view?project=${projectId}`;
       event.fileId = r.$id;
       event.imageUrl = link || event.imageUrl;
     }
@@ -151,8 +141,13 @@ export const deleteEvent = async (req, res) => {
         error: "Unauthorized! You are not able to delete the event",
       });
     }
-    const result = storage
-      .deleteFile(process.env.APPWRITE_BUCKET_ID, event.fileId)
+    try {
+      if (event.fileId) {
+        await storage.deleteFile(bucketId, event.fileId);
+      }
+    } catch (delErr) {
+      console.warn("Could not delete file from Appwrite: " + delErr);
+    }
 
     await Promise.all([
       event.deleteOne(),

@@ -17,7 +17,7 @@ const applicationSchema = new mongoose.Schema(
 			default: false,
 		},
 		appliedTo: {
-			type: [],
+			type: String,
 			required: true,
 		},
 	},

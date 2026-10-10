@@ -6,6 +6,7 @@ import Group from "../models/groupModel.js";
 import logger from "../utils/logger.js";
 import Application from "../models/applicationModel.js";
 import { addEmailToQueue } from "../queues/emailQueue.js";
+import { ensureApplicationQRCode } from "../utils/ticketQR.js";
 dotenv.config();
 
 const razorpayInstance = new Razorpay({
@@ -67,18 +68,24 @@ export const verifyPayment = async (req, res) => {
 			});
 
 			const group = await Group.findById(groupId);
-			let application = await Application.findOne({ eventId, userId });
-			if (application) {
-				application.appliedTo.push(group.name);
-				const updatedApplication = await application.save();
-				logger.info("Updated application: " + updatedApplication);
-			} else {
+			const subeventName = group ? group.name : "General Registration";
+			let application = await Application.findOne({
+				eventId,
+				userId,
+				appliedTo: subeventName,
+			});
+			if (!application) {
 				application = await Application.create({
 					eventId,
 					userId,
-					appliedTo: [group.name],
+					appliedTo: subeventName,
 				});
-				logger.info("Updated application: " + application);
+				logger.info("Created application for subevent: " + application);
+			}
+			try {
+				await ensureApplicationQRCode(application);
+			} catch (qrErr) {
+				logger.error("Error generating/persisting QR during registration: " + qrErr);
 			}
 			await addEmailToQueue(application._id);
 

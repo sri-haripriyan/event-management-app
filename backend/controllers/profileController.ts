@@ -7,6 +7,8 @@ import logger from "../utils/logger.js";
 import { InputFile } from "node-appwrite/file";
 import { ID } from "node-appwrite";
 import { storage, bucketId, projectId, endpoint } from "../configs/appwrite.js";
+import { ensureApplicationQRCode } from "../utils/ticketQR.js";
+import { computeTicketStatus, parseEventEndDateTime } from "../utils/eventTiming.js";
 
 export const uploadProfilePhoto = async (req: any, res: any) => {
 	try {
@@ -151,52 +153,112 @@ export const getPanelData = async (req: any, res: any) => {
 		// Deduplicate and aggregate participated events
 		const eventMap = new Map<string, any>();
 
-		// 1. Applications
+		// Ensure all existing applications have persisted QR code in Appwrite
+		for (const app of applications) {
+			if (!app.qrCodeUrl && app.eventId) {
+				try {
+					await ensureApplicationQRCode(app);
+				} catch (err: any) {
+					logger.warn("QR auto-persist error for app " + app._id + ": " + err?.message);
+				}
+			}
+		}
+
+		// 1. Applications (Each subevent has its own application with unique QR code)
 		applications.forEach((app: any) => {
 			if (app.eventId && app.eventId._id) {
-				const id = app.eventId._id.toString();
-				eventMap.set(id, {
+				const appId = app._id.toString();
+				const timing = computeTicketStatus(app.eventId.eventDate, app.eventId.endTime, app.checkIn);
+				const isScanned = app.checkIn?.status === "SCANNED" || app.isAttended === true;
+				const subEvent =
+					typeof app.appliedTo === "string"
+						? app.appliedTo
+						: Array.isArray(app.appliedTo) && app.appliedTo.length > 0
+						? app.appliedTo[0]
+						: "General Registration";
+
+				eventMap.set(appId, {
 					event: app.eventId,
-					isAttended: app.isAttended ?? true,
-					appliedTo: app.appliedTo || [],
-					status: app.isAttended ? "Checked In" : "Attended",
+					organizingEventId: app.eventId._id,
+					organizingEventTitle: app.eventId.title,
+					applicationId: app._id,
+					subEvent,
+					appliedTo: subEvent,
+					qrCodeUrl: app.qrCodeUrl || "",
+					qrFileId: app.qrFileId || "",
+					checkIn: app.checkIn || {
+						status: isScanned ? "SCANNED" : "NOT_SCANNED",
+						scannedAt: isScanned ? app.updatedAt || app.createdAt : null,
+					},
+					expiryStatus: timing.expiryStatus,
+					eventEndTime: timing.eventEndTime,
+					isAttended: isScanned,
+					status: isScanned ? "Checked In" : (timing.isExpired ? "Expired" : "Registered"),
 					createdAt: app.createdAt || app.eventId.createdAt,
 				});
 			}
 		});
 
-		// 2. Payments
+		// 2. Payments (Match with existing subevent application or register standalone payment)
 		payments.forEach((pay: any) => {
 			if (pay.eventId && pay.eventId._id) {
-				const id = pay.eventId._id.toString();
-				const existing = eventMap.get(id);
-				if (existing) {
-					existing.payment = pay;
-					existing.paid = true;
-				} else {
-					eventMap.set(id, {
+				const evId = pay.eventId._id.toString();
+				let matched = false;
+				for (const item of eventMap.values()) {
+					if (item.event && item.event._id.toString() === evId) {
+						item.payment = pay;
+						item.paid = true;
+						matched = true;
+					}
+				}
+				if (!matched) {
+					const timing = computeTicketStatus(pay.eventId.eventDate, pay.eventId.endTime);
+					const payKey = `pay_${pay._id.toString()}`;
+					eventMap.set(payKey, {
 						event: pay.eventId,
-						isAttended: true,
-						status: "Checked In",
+						organizingEventId: pay.eventId._id,
+						organizingEventTitle: pay.eventId.title,
+						subEvent: "Paid Entry",
+						appliedTo: "Paid Entry",
+						isAttended: false,
+						status: timing.isExpired ? "Expired" : "Registered",
 						payment: pay,
 						paid: true,
+						expiryStatus: timing.expiryStatus,
+						eventEndTime: timing.eventEndTime,
+						checkIn: { status: "NOT_SCANNED", scannedAt: null },
 						createdAt: pay.createdAt || pay.eventId.createdAt,
 					});
 				}
 			}
 		});
 
-		// 3. User eventsApplied array (if any direct references exist)
+		// 3. User eventsApplied array (if any direct references exist and not in eventMap)
 		if (user?.eventsApplied?.length) {
 			const directEvents = await Event.find({ _id: { $in: user.eventsApplied } });
 			directEvents.forEach((ev: any) => {
-				const id = ev._id.toString();
-				if (!eventMap.has(id)) {
-					eventMap.set(id, {
+				const evId = ev._id.toString();
+				let hasEvent = false;
+				for (const item of eventMap.values()) {
+					if (item.event && item.event._id.toString() === evId) {
+						hasEvent = true;
+						break;
+					}
+				}
+				if (!hasEvent) {
+					const timing = computeTicketStatus(ev.eventDate, ev.endTime);
+					eventMap.set(`dir_${evId}`, {
 						event: ev,
-						isAttended: true,
-						status: "Attended",
+						organizingEventId: ev._id,
+						organizingEventTitle: ev.title,
+						subEvent: "General RSVP",
+						appliedTo: "General RSVP",
+						isAttended: false,
+						status: timing.isExpired ? "Expired" : "Registered",
 						paid: ev.paid,
+						expiryStatus: timing.expiryStatus,
+						eventEndTime: timing.eventEndTime,
+						checkIn: { status: "NOT_SCANNED", scannedAt: null },
 						createdAt: ev.createdAt,
 					});
 				}
@@ -206,23 +268,40 @@ export const getPanelData = async (req: any, res: any) => {
 		// Map to standard format
 		const participatedEvents = Array.from(eventMap.values()).map((item: any) => {
 			const ev = item.event;
-			const refCode = `#LUM-${ev._id.toString().slice(-5).toUpperCase()}`;
+			const refCode = item.applicationId
+				? `#LUM-${item.applicationId.toString().slice(-5).toUpperCase()}`
+				: `#LUM-${ev._id.toString().slice(-5).toUpperCase()}`;
 			const isPaid = ev.paid || Boolean(item.payment);
 			const amount = ev.amount || (isPaid ? 99 : 0);
+			const timing = computeTicketStatus(ev.eventDate, ev.endTime, item.checkIn);
+			const isScanned = item.checkIn?.status === "SCANNED";
 
 			return {
 				_id: ev._id,
+				organizingEventId: ev._id,
+				organizingEventTitle: ev.title,
+				applicationId: item.applicationId || null,
 				title: ev.title,
+				subEvent: item.subEvent || item.appliedTo || "General Registration",
+				appliedTo: item.appliedTo || item.subEvent || "General Registration",
 				description: ev.description,
 				imageUrl: ev.imageUrl,
 				eventDate: ev.eventDate,
 				startTime: ev.startTime,
 				endTime: ev.endTime,
+				eventEndTime: timing.eventEndTime,
+				expiryStatus: timing.expiryStatus, // "Active" | "Expired"
+				checkIn: item.checkIn || {
+					status: isScanned ? "SCANNED" : "NOT_SCANNED",
+					scannedAt: isScanned ? item.createdAt : null,
+				},
+				qrCodeUrl: item.qrCodeUrl || "",
+				qrFileId: item.qrFileId || "",
 				paid: isPaid,
 				amount: amount,
 				reference: refCode,
-				status: item.status || "Attended",
-				isAttended: item.isAttended ?? true,
+				status: isScanned ? "Checked In" : (timing.isExpired ? "Expired" : "Registered"),
+				isAttended: isScanned,
 				location: ev.location || (ev.nonTechnical?.length ? "ACN. Hall Studio" : "Online / Virtual"),
 				createdAt: item.createdAt || ev.createdAt,
 			};
@@ -259,3 +338,80 @@ export const getPanelData = async (req: any, res: any) => {
 		return res.status(500).json({ error: error.message });
 	}
 };
+
+export const scanTicketCheckIn = async (req: any, res: any) => {
+	try {
+		const { qrPayload, applicationId, eventId } = req.body;
+		let appId = applicationId;
+		let evId = eventId;
+
+		if (qrPayload && typeof qrPayload === "string") {
+			if (qrPayload.includes("==")) {
+				const parts = qrPayload.split("==");
+				evId = evId || parts[0]?.trim();
+				appId = appId || parts[1]?.trim();
+			} else {
+				appId = appId || qrPayload.trim();
+			}
+		}
+
+		if (!appId) {
+			return res.status(400).json({ error: "Invalid ticket QR code data" });
+		}
+
+		const application = await Application.findById(appId)
+			.populate("eventId")
+			.populate("userId", "userName email profile_image_url");
+
+		if (!application) {
+			return res.status(404).json({ error: "Ticket not found in system" });
+		}
+
+		const event = application.eventId as any;
+		if (evId && event?._id && event._id.toString() !== evId.toString()) {
+			return res.status(400).json({ error: "Ticket does not belong to this event" });
+		}
+
+		// Check if already checked in
+		if (application.checkIn?.status === "SCANNED") {
+			return res.status(409).json({
+				error: "Ticket has already been scanned and checked in",
+				checkIn: application.checkIn,
+				scannedAt: application.checkIn.scannedAt,
+				alreadyScanned: true,
+			});
+		}
+
+		const timing = computeTicketStatus(event?.eventDate, event?.endTime, application.checkIn);
+
+		const scannedAt = new Date();
+		application.checkIn = {
+			status: "SCANNED",
+			scannedAt,
+		};
+		application.isAttended = true;
+		await application.save();
+
+		return res.status(200).json({
+			message: "Check-in successful",
+			ticket: {
+				applicationId: application._id,
+				checkIn: application.checkIn,
+				isAttended: true,
+				expiryStatus: timing.expiryStatus,
+				event: {
+					_id: event?._id,
+					title: event?.title,
+					eventDate: event?.eventDate,
+					startTime: event?.startTime,
+					endTime: event?.endTime,
+				},
+				user: application.userId,
+			},
+		});
+	} catch (err: any) {
+		logger.error("Scan ticket check-in error: " + err.message);
+		return res.status(500).json({ error: err.message });
+	}
+};
+

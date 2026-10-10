@@ -5,6 +5,7 @@ import { io, onlineUsers } from "../socket/socket.js";
 import logger from "../utils/logger.js";
 import Application from "../models/applicationModel.js";
 import { addEmailToQueue } from "../queues/emailQueue.js";
+import { ensureApplicationQRCode } from "../utils/ticketQR.js";
 export const createGroup = async (req, res) => {
 	const { name, eventId, isHead } = req.body;
 
@@ -208,24 +209,26 @@ export const approveRequest = async (req, res) => {
 					$push: { groups: group._id },
 				}),
 			]);
+			const subeventName = group ? group.name : "General Registration";
 			let application = await Application.findOne({
 				eventId: group.eventId,
 				userId: joinRequest.user,
+				appliedTo: subeventName,
 			});
-			if (application) {
-				application.appliedTo.push(group.name);
-				const updatedApplication = await application.save();
-				logger.info("Updated application: " + updatedApplication);
-				await addEmailToQueue(application._id);
-			} else {
-				const newApplication = await Application.create({
+			if (!application) {
+				application = await Application.create({
 					eventId: group.eventId,
 					userId: joinRequest.user,
-					appliedTo: [group.name],
+					appliedTo: subeventName,
 				});
-				logger.info("Updated application: " + newApplication);
-				await addEmailToQueue(newApplication._id);
+				logger.info("Created application for subevent: " + application);
 			}
+			try {
+				await ensureApplicationQRCode(application);
+			} catch (qrErr) {
+				logger.error("QR generation error on approve: " + qrErr);
+			}
+			await addEmailToQueue(application._id);
 		} else {
 			await joinRequest.save();
 		}

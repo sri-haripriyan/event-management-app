@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import Application from "../models/applicationModel.js";
-import { generateQRCode } from "./generateQR.js";
+import { ensureApplicationQRCode } from "./ticketQR.js";
 import dotenv from "dotenv";
 dotenv.config();
 const transporter = nodemailer.createTransport({
@@ -18,30 +18,34 @@ export const sendEmailWithQRCode = async (applicationId) => {
 		const application = await Application.findById(applicationId)
 			.populate("userId", "userName email")
 			.populate("eventId", "title") as any;
-		const qrCodeBase64 = await generateQRCode(
-			`${application.eventId._id.toString()}==${application._id}`
-		);
-		const eventList = application.appliedTo
-			.map((event, index) => `<li><b>${index + 1}. ${event}</b></li>`)
-			.join("");
+
+		// Use the same persisted QR code stored in Appwrite
+		const { qrBuffer, qrCodeUrl } = await ensureApplicationQRCode(application);
+		const attachmentContent = qrBuffer || qrCodeUrl.split(";base64,").pop();
+		const subeventName =
+			typeof application.appliedTo === "string"
+				? application.appliedTo
+				: Array.isArray(application.appliedTo)
+				? application.appliedTo[0]
+				: "General Entry";
 
 		const mailOptions = {
 			from: process.env.EMAIL_USER,
 			to: application.userId.email,
-			subject: `Application successful for ${application.eventId.title}`,
+			subject: `Application successful for ${subeventName}`,
 			html: `
-					<h2>${application.eventId.title}</h2>
-					<p>Scan this QR code for event attendance:</p>
+					<h2>${application.eventId?.title || "Event Registration"}</h2>
+					<p>Scan this QR code for sub-event attendance:</p>
 					<img src="cid:qrcode" alt="QR Code" style="width:200px;height:200px;"/> 
-					<h3>Registered Events</h3>
-					<ul>${eventList}</ul>
-					<p>Thank you for registering!</p>
+					<h3>Registered Sub-event</h3>
+					<p style="font-size: 16px; font-weight: bold; color: #4F46E5;">${subeventName}</p>
+					<p>Thank you for registering for <b>${subeventName}</b>!</p>
 				`,
 			attachments: [
 				{
 					filename: "qrcode.png",
-					content: qrCodeBase64.split(";base64,").pop(),
-					encoding: "base64",
+					content: attachmentContent,
+					encoding: Buffer.isBuffer(attachmentContent) ? undefined : "base64",
 					cid: "qrcode",
 				},
 			],

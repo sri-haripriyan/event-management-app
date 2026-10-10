@@ -5,7 +5,9 @@ import { toast } from "react-toastify";
 import { useAuth } from "../hooks/useAuth";
 import { getPanelData, uploadImage, signout } from "../services/api";
 import ImageCropModal from "../components/ImageCropModal";
+import TicketQRModal from "../components/TicketQRModal";
 import Spinner from "../components/Spinner";
+import { getTicketStatus } from "../utils/ticketUtils";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -27,6 +29,9 @@ const ProfilePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  // Ticket Modal State
+  const [ticketModalOpen, setTicketModalOpen] = useState(false);
+  const [selectedTicketEvent, setSelectedTicketEvent] = useState(null);
 
   // Crop Modal State
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -56,6 +61,20 @@ const ProfilePage = () => {
       }
     }
   }, [panelData, user, setUser]);
+
+  // Keep selected ticket in sync with panelData refetches
+  useEffect(() => {
+    if (selectedTicketEvent && panelData?.participatedEvents) {
+      const updated = panelData.participatedEvents.find(
+        (e) =>
+          (e._id && e._id === selectedTicketEvent._id) ||
+          (e.applicationId && e.applicationId === selectedTicketEvent.applicationId)
+      );
+      if (updated) {
+        setSelectedTicketEvent(updated);
+      }
+    }
+  }, [panelData?.participatedEvents, selectedTicketEvent]);
 
   // Logout Mutation
   const { mutate: performLogout, isPending: isLoggingOut } = useMutation({
@@ -643,10 +662,11 @@ const ProfilePage = () => {
                     const isPaid = event.paid === true || (event.amount && event.amount > 0);
                     const amountFormatted = event.amount ? `$${Number(event.amount).toFixed(2)}` : "$99.00";
                     const isVirtual = String(event.location).toLowerCase().includes("virtual") || String(event.location).toLowerCase().includes("online");
+                    const ticketStatus = getTicketStatus(event);
 
                     return (
                       <article
-                        key={event._id || index}
+                        key={event.applicationId || event._id || index}
                         className="bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg shadow-sm hover:shadow-md transition-shadow duration-200 border border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-space-md"
                       >
                         {/* Left Side: Date Block & Metadata */}
@@ -668,26 +688,56 @@ const ProfilePage = () => {
 
                           {/* Event Details */}
                           <div className="flex flex-col gap-1 min-w-0">
+                            {event.subEvent && (
+                              <span className="text-[11px] font-bold text-primary-container uppercase tracking-wider">
+                                Track: {event.subEvent}
+                              </span>
+                            )}
                             <div className="flex flex-wrap items-center gap-space-xs">
                               <h3 className="font-headline-md text-headline-md text-on-surface font-bold truncate">
                                 {event.title}
                               </h3>
 
-                              {/* Status Badge */}
+                              {/* QR Expiry Badge */}
                               <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-label-sm font-semibold ${event.status === "Checked In"
-                                  ? "bg-secondary-container/40 text-on-secondary-container"
-                                  : "bg-surface-container-high text-on-surface"
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-xs font-semibold ${
+                                  ticketStatus.isExpired
+                                    ? "bg-zinc-500/15 text-zinc-400 border border-zinc-500/30"
+                                    : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    ticketStatus.isExpired ? "bg-zinc-400" : "bg-emerald-400 animate-pulse"
                                   }`}
+                                />
+                                <span>{ticketStatus.isExpired ? "QR Expired" : "QR Active"}</span>
+                              </span>
+
+                              {/* Check-In Badge */}
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-xs font-semibold ${
+                                  ticketStatus.isScanned
+                                    ? "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
+                                    : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                }`}
                               >
                                 <span className="material-symbols-outlined text-xs">
-                                  {event.status === "Checked In" ? "check_circle" : "done"}
+                                  {ticketStatus.isScanned ? "verified" : "qr_code_scanner"}
                                 </span>
-                                {event.status || "Attended"}
+                                <span>{ticketStatus.isScanned ? "Checked In" : "Not Scanned"}</span>
                               </span>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-x-space-md gap-y-1 text-on-surface-variant font-body-sm text-body-sm">
+                              {/* Timing */}
+                              <span className="flex items-center gap-1">
+                                <span className="material-symbols-outlined text-base text-outline">schedule</span>
+                                <span>{event.startTime ? `${event.startTime} - ` : ""}{event.endTime || "All Day"}</span>
+                              </span>
+
+                              <span className="text-outline">•</span>
+
                               {/* Location */}
                               <span className="flex items-center gap-1">
                                 <span className="material-symbols-outlined text-base text-outline">
@@ -719,8 +769,54 @@ const ProfilePage = () => {
                           </div>
                         </div>
 
+                        {/* Middle: Persisted QR Code Preview */}
+                        {event.qrCodeUrl && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedTicketEvent(event);
+                              setTicketModalOpen(true);
+                            }}
+                            className="flex items-center gap-2.5 p-1.5 pr-3 rounded-lg bg-surface-container-low hover:bg-surface-container border border-outline-variant/20 transition-all group shrink-0 self-start md:self-center"
+                            title="Click to view full ticket pass and QR"
+                          >
+                            <div className="w-10 h-10 p-0.5 bg-white rounded-md shadow-sm shrink-0 flex items-center justify-center overflow-hidden">
+                              <img
+                                src={event.qrCodeUrl}
+                                alt="Ticket QR"
+                                className={`w-full h-full object-contain transition-transform group-hover:scale-105 ${
+                                  ticketStatus.isExpired ? "opacity-60 grayscale" : ""
+                                }`}
+                              />
+                            </div>
+                            <div className="flex flex-col text-left">
+                              <span className="font-label-sm text-xs font-bold text-on-surface flex items-center gap-1">
+                                <span>QR Code</span>
+                                <span className="material-symbols-outlined text-xs text-outline group-hover:text-primary-container">
+                                  qr_code_2
+                                </span>
+                              </span>
+                              <span className="text-[10px] text-outline font-medium">
+                                {ticketStatus.compositeLabel}
+                              </span>
+                            </div>
+                          </button>
+                        )}
+
                         {/* Right Side: Action Buttons */}
-                        <div className="flex items-center gap-space-xs shrink-0 self-end md:self-center">
+                        <div className="flex items-center gap-space-xs shrink-0 self-end md:self-center flex-wrap">
+                          <button
+                            onClick={() => {
+                              setSelectedTicketEvent(event);
+                              setTicketModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-surface-tint font-label-md text-label-md transition-all shadow-sm font-semibold active:scale-95"
+                            type="button"
+                          >
+                            <span className="material-symbols-outlined text-base">qr_code_2</span>
+                            <span>View Ticket</span>
+                          </button>
+
                           {isPaid ? (
                             <button
                               onClick={() => toast.info(`Invoice downloaded for #${event.reference || "LUM"}`)}
@@ -752,7 +848,7 @@ const ProfilePage = () => {
 
                           <button
                             onClick={() => navigate(`/events/${event._id}`)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-surface-tint font-label-md text-label-md transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors border border-outline-variant/20"
                             type="button"
                           >
                             <span className="material-symbols-outlined text-base">rate_review</span>
@@ -852,6 +948,17 @@ const ProfilePage = () => {
         }}
         onCropComplete={handleCropComplete}
         isUploading={isUploading}
+      />
+
+      {/* Ticket QR Code & Passport Modal */}
+      <TicketQRModal
+        isOpen={ticketModalOpen}
+        onClose={() => {
+          setTicketModalOpen(false);
+          setSelectedTicketEvent(null);
+        }}
+        event={selectedTicketEvent}
+        currentUser={currentUser}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import {
 	getEvents,
 	getEventById,
 } from "../controllers/eventController.js";
+import { scanTicketCheckIn } from "../controllers/profileController.js";
 import multer from "multer";
 
 import protect from "../middleware/protect.js";
@@ -15,6 +16,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.route("/").get(getEvents);
+router.route("/scan-ticket").post(protect, scanTicketCheckIn);
 router.route("/").post(protect, upload.single("file"), createEvent);
 router.route("/:id").delete(protect, deleteEvent);
 router.route("/:id").get(getEventById);
