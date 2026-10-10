@@ -84,8 +84,23 @@ export const getPanelData = () =>
 // Scan ticket / Check-in validation
 export const scanTicketCheckIn = (payload) =>
   axios
-    .post(`${BASE_URL}/api/profile/scan-ticket`, payload, { withCredentials: true })
+    .post(`${BASE_URL}/api/tickets/scan-ticket`, payload, { withCredentials: true })
     .then((res) => res.data);
+
+// Fetch Event Attendance (for organizers & hosts)
+export const getEventAttendance = async (eventId) => {
+  return axios
+    .get(`${BASE_URL}/api/tickets/attendance/${eventId}`, { withCredentials: true })
+    .then((res) => res.data);
+};
+
+// Mark attendee attendance by scanning QR code
+export const markEventAttendance = async ({ eventId, decodedText }) => {
+  const payload = typeof decodedText === "object" ? decodedText : { qrPayload: decodedText };
+  return axios
+    .post(`${BASE_URL}/api/tickets/scan/${eventId}`, payload, { withCredentials: true })
+    .then((res) => res.data);
+};
 
 // Fetch comments
 export const commentsFetch = (blogId) =>

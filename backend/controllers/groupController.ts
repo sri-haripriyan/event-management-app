@@ -223,12 +223,7 @@ export const approveRequest = async (req, res) => {
 				});
 				logger.info("Created application for subevent: " + application);
 			}
-			try {
-				await ensureApplicationQRCode(application);
-			} catch (qrErr) {
-				logger.error("QR generation error on approve: " + qrErr);
-			}
-			await addEmailToQueue(application._id);
+			await addEmailToQueue(application._id.toString());
 		} else {
 			await joinRequest.save();
 		}

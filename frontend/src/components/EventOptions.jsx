@@ -56,8 +56,14 @@ const EventOptions = ({ event }) => {
 					>
 						<IoShareSocialOutline className=" inline text-lg" /> Share
 					</div>
-					{user && user._id === event?.userId?._id && (
+					{user && (user._id === event?.userId?._id || user._id === event?.userId || user?.isHost) && (
 						<div className="flex flex-col gap-2">
+							<div
+								onClick={() => navigate(`/events/${event?._id}/attendance`)}
+								className="hover:shadow-md cursor-pointer duration-200 text-primary-container px-2 py-1 rounded-sm flex items-center gap-1.5 text-xs font-semibold"
+							>
+								<span className="material-symbols-outlined text-base">qr_code_scanner</span> Attendance
+							</div>
 							<div
 								onClick={() => navigate(`/updateEvent/${event?._id}`)}
 								className="hover:shadow-md cursor-pointer duration-200 text-blue-900 px-2 py-1 rounded-sm "

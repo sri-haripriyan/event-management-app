@@ -187,19 +187,19 @@ const EventSection = ({ event }) => {
             </div>
 
             {/* Attendance & Organizer Quick link */}
-            {user?._id === event?.userId?._id && (
+            {(user?._id === event?.userId?._id || user?._id === event?.userId || user?.isHost) && (
               <div className="pt-2">
-                <a
-                  href={`${import.meta.env.VITE_ATTENDANCE_URL}/events/${event?._id}/attendance/${event?.title}`}
+                <Link
+                  to={`/events/${event?._id}/attendance`}
                   className="block w-full text-center bg-primary-container hover:bg-surface-tint text-on-primary font-medium py-3 rounded-xl transition duration-200 shadow-md shadow-primary-container/20"
                 >
                   Proceed to Attendance
-                </a>
+                </Link>
               </div>
             )}
 
             {/* Application Button */}
-            {user && event?.userId?._id !== user?._id && (
+            {user && event?.userId?._id !== user?._id && event?.userId !== user?._id && (
               <div className="pt-2">
                 {event?.paid ? (
                   <Link
@@ -213,6 +213,19 @@ const EventSection = ({ event }) => {
                     <RequestButton />
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Host Organizer Attendance Actions */}
+            {user && (event?.userId?._id === user?._id || event?.userId === user?._id || user?.isHost) && (
+              <div className="pt-2 flex flex-col gap-2">
+                <Link
+                  className="w-full text-center bg-primary-container hover:bg-surface-tint text-on-primary font-semibold py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2 text-sm"
+                  to={`/events/${event?._id}/attendance`}
+                >
+                  <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                  <span>Gate Attendance &amp; Scanner</span>
+                </Link>
               </div>
             )}
 
