@@ -16,8 +16,27 @@ const applicationSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		qrCodeUrl: {
+			type: String,
+			default: "",
+		},
+		qrFileId: {
+			type: String,
+			default: "",
+		},
+		checkIn: {
+			status: {
+				type: String,
+				enum: ["NOT_SCANNED", "SCANNED"],
+				default: "NOT_SCANNED",
+			},
+			scannedAt: {
+				type: Date,
+				default: null,
+			},
+		},
 		appliedTo: {
-			type: [],
+			type: String,
 			required: true,
 		},
 	},

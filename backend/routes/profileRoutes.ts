@@ -4,6 +4,7 @@ import {
 	getPanelData,
 	updateProfile,
 	uploadProfilePhoto,
+	scanTicketCheckIn,
 } from "../controllers/profileController.js";
 import multer from "multer";
 
@@ -25,5 +26,6 @@ router
 	.route("/upload")
 	.post(protect, upload.single("image"), uploadProfilePhoto);
 router.route("/").get(protect, getPanelData).put(protect, updateProfile);
+router.route("/scan-ticket").post(protect, scanTicketCheckIn);
 
 export default router;

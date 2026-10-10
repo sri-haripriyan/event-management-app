@@ -16,6 +16,7 @@ const EditEvents = lazy(() => import("./screen/EditEvents"));
 const Request = lazy(() => import("./screen/Request"));
 const About = lazy(() => import("./screen/About"));
 const ProfilePage = lazy(() => import("./screen/ProfilePage"));
+const MyTickets = lazy(() => import("./screen/MyTickets"));
 
 const App = () => {
   return (
@@ -43,6 +44,8 @@ const App = () => {
               <Route path="/payments/:eventId" element={<PaymentPage />} />
               <Route path="/about" element={<About />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/myTickets" element={<MyTickets />} />
+              <Route path="/mytickets" element={<MyTickets />} />
             </Route>
             <Route
               path="*"
