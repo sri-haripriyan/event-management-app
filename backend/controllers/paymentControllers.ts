@@ -6,7 +6,6 @@ import Group from "../models/groupModel.js";
 import logger from "../utils/logger.js";
 import Application from "../models/applicationModel.js";
 import { addEmailToQueue } from "../queues/emailQueue.js";
-import { ensureApplicationQRCode } from "../utils/ticketQR.js";
 dotenv.config();
 
 const razorpayInstance = new Razorpay({
@@ -82,12 +81,7 @@ export const verifyPayment = async (req, res) => {
 				});
 				logger.info("Created application for subevent: " + application);
 			}
-			try {
-				await ensureApplicationQRCode(application);
-			} catch (qrErr) {
-				logger.error("Error generating/persisting QR during registration: " + qrErr);
-			}
-			await addEmailToQueue(application._id);
+			await addEmailToQueue(application._id.toString());
 
 			await payment.save();
 			res.status(200).json({ message: "Payment verified successfully" });

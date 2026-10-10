@@ -96,12 +96,6 @@ const Header = () => {
               <NavLink to="/events" className={navLinkClass}>
                 Events
               </NavLink>
-              <Link
-                to="/events"
-                className="text-on-surface-variant hover:text-on-surface font-label-md text-label-md px-3 py-1.5 transition-colors rounded-lg hover:bg-surface-container"
-              >
-                Discover
-              </Link>
 
               {/* My Tickets, Schedule, and Community are only visible when user is logged in */}
               {user && (

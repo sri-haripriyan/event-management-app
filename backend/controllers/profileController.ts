@@ -8,7 +8,7 @@ import { InputFile } from "node-appwrite/file";
 import { ID } from "node-appwrite";
 import { storage, bucketId, projectId, endpoint } from "../configs/appwrite.js";
 import { ensureApplicationQRCode } from "../utils/ticketQR.js";
-import { computeTicketStatus, parseEventEndDateTime } from "../utils/eventTiming.js";
+import { computeTicketStatus } from "../utils/eventTiming.js";
 
 export const uploadProfilePhoto = async (req: any, res: any) => {
 	try {
@@ -174,8 +174,8 @@ export const getPanelData = async (req: any, res: any) => {
 					typeof app.appliedTo === "string"
 						? app.appliedTo
 						: Array.isArray(app.appliedTo) && app.appliedTo.length > 0
-						? app.appliedTo[0]
-						: "General Registration";
+							? app.appliedTo[0]
+							: "General Registration";
 
 				eventMap.set(appId, {
 					event: app.eventId,
@@ -336,82 +336,6 @@ export const getPanelData = async (req: any, res: any) => {
 	} catch (error: any) {
 		logger.error("Get panel data controller error: " + error.message);
 		return res.status(500).json({ error: error.message });
-	}
-};
-
-export const scanTicketCheckIn = async (req: any, res: any) => {
-	try {
-		const { qrPayload, applicationId, eventId } = req.body;
-		let appId = applicationId;
-		let evId = eventId;
-
-		if (qrPayload && typeof qrPayload === "string") {
-			if (qrPayload.includes("==")) {
-				const parts = qrPayload.split("==");
-				evId = evId || parts[0]?.trim();
-				appId = appId || parts[1]?.trim();
-			} else {
-				appId = appId || qrPayload.trim();
-			}
-		}
-
-		if (!appId) {
-			return res.status(400).json({ error: "Invalid ticket QR code data" });
-		}
-
-		const application = await Application.findById(appId)
-			.populate("eventId")
-			.populate("userId", "userName email profile_image_url");
-
-		if (!application) {
-			return res.status(404).json({ error: "Ticket not found in system" });
-		}
-
-		const event = application.eventId as any;
-		if (evId && event?._id && event._id.toString() !== evId.toString()) {
-			return res.status(400).json({ error: "Ticket does not belong to this event" });
-		}
-
-		// Check if already checked in
-		if (application.checkIn?.status === "SCANNED") {
-			return res.status(409).json({
-				error: "Ticket has already been scanned and checked in",
-				checkIn: application.checkIn,
-				scannedAt: application.checkIn.scannedAt,
-				alreadyScanned: true,
-			});
-		}
-
-		const timing = computeTicketStatus(event?.eventDate, event?.endTime, application.checkIn);
-
-		const scannedAt = new Date();
-		application.checkIn = {
-			status: "SCANNED",
-			scannedAt,
-		};
-		application.isAttended = true;
-		await application.save();
-
-		return res.status(200).json({
-			message: "Check-in successful",
-			ticket: {
-				applicationId: application._id,
-				checkIn: application.checkIn,
-				isAttended: true,
-				expiryStatus: timing.expiryStatus,
-				event: {
-					_id: event?._id,
-					title: event?.title,
-					eventDate: event?.eventDate,
-					startTime: event?.startTime,
-					endTime: event?.endTime,
-				},
-				user: application.userId,
-			},
-		});
-	} catch (err: any) {
-		logger.error("Scan ticket check-in error: " + err.message);
-		return res.status(500).json({ error: err.message });
 	}
 };
 
