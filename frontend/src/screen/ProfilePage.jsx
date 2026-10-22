@@ -370,28 +370,6 @@ const ProfilePage = () => {
                   </p>
                 </div>
 
-                {/* Appwrite Identity Status */}
-                <div className="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between border border-outline-variant/20">
-                  <div className="flex items-center gap-space-sm min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-base">verified_user</span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-label-md text-label-md text-on-surface font-semibold truncate">
-                          Appwrite Auth
-                        </span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-secondary-lumina"></span>
-                      </div>
-                      <p className="font-body-sm text-body-sm text-outline truncate font-mono text-[11px]">
-                        ID: usr_{currentUser?._id ? String(currentUser._id).slice(-5) : "9942a"}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-secondary-container/40 text-on-secondary-container font-label-sm text-label-sm uppercase font-bold tracking-wider">
-                    Synced
-                  </span>
-                </div>
 
                 {/* Settings Navigation Links */}
                 <nav className="flex flex-col gap-1">
@@ -446,27 +424,6 @@ const ProfilePage = () => {
                         chevron_right
                       </span>
                     </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toast.info("Storage sync active with Appwrite Cloud.")}
-                    className="group flex items-center justify-between p-2.5 rounded-lg hover:bg-surface-container-low text-on-surface transition-colors w-full text-left"
-                  >
-                    <div className="flex items-center gap-space-sm">
-                      <span className="material-symbols-outlined text-outline group-hover:text-primary-container transition-colors text-xl">
-                        cloud_sync
-                      </span>
-                      <div className="flex flex-col text-left">
-                        <span className="font-body-md text-body-md font-medium">Privacy &amp; Data Sync</span>
-                        <span className="font-body-sm text-body-sm text-outline text-[11px]">
-                          Appwrite Cloud v1.4
-                        </span>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined text-outline group-hover:translate-x-0.5 transition-transform text-lg">
-                      chevron_right
-                    </span>
                   </button>
                 </nav>
               </div>
@@ -700,27 +657,24 @@ const ProfilePage = () => {
 
                               {/* QR Expiry Badge */}
                               <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-xs font-semibold ${
-                                  ticketStatus.isExpired
-                                    ? "bg-zinc-500/15 text-zinc-400 border border-zinc-500/30"
-                                    : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                                }`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-xs font-semibold ${ticketStatus.isExpired
+                                  ? "bg-zinc-500/15 text-zinc-400 border border-zinc-500/30"
+                                  : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                  }`}
                               >
                                 <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    ticketStatus.isExpired ? "bg-zinc-400" : "bg-emerald-400 animate-pulse"
-                                  }`}
+                                  className={`w-1.5 h-1.5 rounded-full ${ticketStatus.isExpired ? "bg-zinc-400" : "bg-emerald-400 animate-pulse"
+                                    }`}
                                 />
                                 <span>{ticketStatus.isExpired ? "QR Expired" : "QR Active"}</span>
                               </span>
 
                               {/* Check-In Badge */}
                               <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-xs font-semibold ${
-                                  ticketStatus.isScanned
-                                    ? "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
-                                    : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                                }`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-label-sm text-xs font-semibold ${ticketStatus.isScanned
+                                  ? "bg-indigo-500/15 text-indigo-300 border border-indigo-500/30"
+                                  : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                                  }`}
                               >
                                 <span className="material-symbols-outlined text-xs">
                                   {ticketStatus.isScanned ? "verified" : "qr_code_scanner"}
@@ -784,9 +738,8 @@ const ProfilePage = () => {
                               <img
                                 src={event.qrCodeUrl}
                                 alt="Ticket QR"
-                                className={`w-full h-full object-contain transition-transform group-hover:scale-105 ${
-                                  ticketStatus.isExpired ? "opacity-60 grayscale" : ""
-                                }`}
+                                className={`w-full h-full object-contain transition-transform group-hover:scale-105 ${ticketStatus.isExpired ? "opacity-60 grayscale" : ""
+                                  }`}
                               />
                             </div>
                             <div className="flex flex-col text-left">

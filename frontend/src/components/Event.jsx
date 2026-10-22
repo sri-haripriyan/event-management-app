@@ -121,11 +121,12 @@ const Event = ({ event, toDisplay }) => {
 					<div className="mt-2 w-full pt-4 border-t border-surface-container-high flex items-center justify-between">
 						{/* User Info */}
 						<div className="flex items-center gap-2">
-							<div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-outline-variant/50">
+							<div className="w-6 h-6 rounded-full overflow-hidden ring-1 ring-outline-variant/50 flex items-center justify-center shrink-0">
 								<Avatar
-									size="sm"
+									size="full"
 									imageUrl={event?.userId?.profile_image_url}
 									name={event?.userId?.userName}
+									className="w-full h-full"
 								/>
 							</div>
 							<span className="text-on-surface-variant text-xs font-medium truncate max-w-[80px] sm:max-w-[120px]">

@@ -27,14 +27,14 @@ const EventSection = ({ event }) => {
 
       {/* Main Grid Layout */}
       <div className="max-w-7xl mx-auto px-6 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Left Column: Event details (2/3 width on desktop) */}
         <div className="lg:col-span-2 space-y-8 animate-fade-in">
           <div>
             <h1 className="text-3xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-4">
               {event?.title}
             </h1>
-            
+
             {/* Meta Tags */}
             <div className="flex flex-wrap items-center gap-4 text-on-surface-variant text-sm">
               <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-outline-variant/30 shadow-sm">
@@ -49,12 +49,14 @@ const EventSection = ({ event }) => {
           </div>
 
           {/* Event Image */}
-          <div className="relative w-full rounded-3xl overflow-hidden aspect-video border border-outline-variant/30 shadow-md">
-            <img
-              src={event?.imageUrl}
-              alt={event?.title}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative w-full rounded-2xl overflow-hidden aspect-video border border-outline-variant/30 shadow-md">
+            <div className="relative w-full h-full">
+              <img
+                src={event?.imageUrl}
+                alt={event?.title}
+                className="w-full h-full object-cover object-center"
+              />
+            </div>
           </div>
 
           {/* About/Description Section */}
@@ -147,7 +149,7 @@ const EventSection = ({ event }) => {
         {/* Right Column: Registration Card (1/3 width, Sticky) */}
         <div className="lg:col-span-1">
           <div className="sticky top-24 bg-surface-container-lowest border border-outline-variant/30 p-6 rounded-3xl shadow-sm flex flex-col gap-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            
+
             {/* Header Pricing / Type */}
             <div className="pb-4 border-b border-outline-variant/30">
               <span className="text-xs uppercase text-on-surface-variant tracking-wider font-semibold block mb-1">Registration Ticket</span>
@@ -164,22 +166,20 @@ const EventSection = ({ event }) => {
             {/* Inclusions */}
             <div className="space-y-3">
               <h4 className="text-xs uppercase text-on-surface-variant tracking-wider font-bold">Event Inclusions</h4>
-              
+
               <div className="grid grid-cols-2 gap-3">
-                <div className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${
-                  event?.swags 
-                    ? "bg-primary-container/10 border-primary-container/20 text-primary-container" 
-                    : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
-                }`}>
+                <div className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.swags
+                  ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
+                  : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
+                  }`}>
                   <FiGift size={16} />
                   <span>Swags {event?.swags ? "Included" : "None"}</span>
                 </div>
 
-                <div className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${
-                  event?.refreshments 
-                    ? "bg-primary-container/10 border-primary-container/20 text-primary-container" 
-                    : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
-                }`}>
+                <div className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.refreshments
+                  ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
+                  : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
+                  }`}>
                   <FiCoffee size={16} />
                   <span>Refreshments {event?.refreshments ? "Included" : "None"}</span>
                 </div>
