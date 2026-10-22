@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Spinner from "./components/Spinner";
 import Layout from "./layout/Layout";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+
 const Events = lazy(() => import("./screen/Events"));
 const Event = lazy(() => import("./screen/Event"));
 const Login = lazy(() => import("./screen/Login"));
@@ -32,23 +34,28 @@ const App = () => {
         <div className="w-full min-h-screen bg-surface text-on-surface mx-auto">
           <Routes>
             <Route element={<Layout />}>
+              {/* Public routes (exempt) */}
               <Route path="/" element={<GetStarted />} />
               <Route path="/events" element={<Events />} />
               <Route path="/events/:eventId" element={<Event />} />
-              <Route path="/chats" element={<Group />} />
-              <Route path="/create-events" element={<CreateEvents />} />
-              <Route path="/updateEvent/:eventId" element={<EditEvents />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/request" element={<Request />} />
+              <Route path="/about" element={<About />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/payments/:eventId" element={<PaymentPage />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/myTickets" element={<MyTickets />} />
-              <Route path="/mytickets" element={<MyTickets />} />
-              <Route path="/events/:eventId/attendance" element={<AttendancePage />} />
-              <Route path="/events/:eventId/attendance/:title" element={<AttendancePage />} />
+
+              {/* Protected routes */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/chats" element={<Group />} />
+                <Route path="/create-events" element={<CreateEvents />} />
+                <Route path="/updateEvent/:eventId" element={<EditEvents />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/request" element={<Request />} />
+                <Route path="/payments/:eventId" element={<PaymentPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/myTickets" element={<MyTickets />} />
+                <Route path="/mytickets" element={<MyTickets />} />
+                <Route path="/events/:eventId/attendance" element={<AttendancePage />} />
+                <Route path="/events/:eventId/attendance/:title" element={<AttendancePage />} />
+              </Route>
             </Route>
             <Route
               path="*"
