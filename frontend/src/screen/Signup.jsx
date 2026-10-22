@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { SignupData } from "../services/api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -9,7 +9,9 @@ import { toast } from "react-toastify";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser } = useAuth();
+  const from = location.state?.from?.pathname || "/events";
   const [userName, setuserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +24,7 @@ const Signup = () => {
       setUser(data);
       setuserName("");
       setPassword("");
-      navigate("/events");
+      navigate(from, { replace: true });
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || error?.message);
@@ -129,7 +131,7 @@ const Signup = () => {
 
             <div className="mt-8 text-center text-sm text-on-surface-variant">
               <span>Already have an account? </span>
-              <Link to="/login" className="text-primary-container hover:text-surface-tint font-semibold underline transition-colors">
+              <Link to="/login" state={location.state} className="text-primary-container hover:text-surface-tint font-semibold underline transition-colors">
                 Log In
               </Link>
             </div>

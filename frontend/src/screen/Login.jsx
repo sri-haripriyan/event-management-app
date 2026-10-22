@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { logindata } from "../services/api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -9,7 +9,10 @@ import PasswordInput from "../components/PasswordInput.jsx";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setUser } = useAuth();
+  const from = location.state?.from?.pathname || "/events";
+
   const { mutate, isPending } = useMutation({
     mutationFn: ({ userName, password }) => logindata({ userName, password }),
     onSuccess: (data) => {
@@ -17,7 +20,7 @@ const Login = () => {
       setUser(data);
       setuserName("");
       setPassword("");
-      navigate("/events");
+      navigate(from, { replace: true });
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || error.message);
@@ -108,7 +111,7 @@ const Login = () => {
 
             <div className="mt-8 text-center text-sm text-on-surface-variant">
               <span>Don&apos;t have an account? </span>
-              <Link to="/signup" className="text-primary-container hover:text-surface-tint font-semibold underline transition-colors">
+              <Link to="/signup" state={location.state} className="text-primary-container hover:text-surface-tint font-semibold underline transition-colors">
                 Sign Up
               </Link>
             </div>

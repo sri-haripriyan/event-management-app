@@ -3,6 +3,17 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 // Send httpOnly cookies with all API requests
 axios.defaults.withCredentials = true;
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear client-side authentication state
+      window.dispatchEvent(new Event("auth:logout"));
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // Fetch blogs
 export const fetchBlogs = async ({ queryKey }) => {

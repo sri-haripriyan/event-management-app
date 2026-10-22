@@ -58,6 +58,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const handleLogout = () => {
+      setUser(null);
+      localStorage.removeItem("user");
+    };
+    window.addEventListener("auth:logout", handleLogout);
+    return () => window.removeEventListener("auth:logout", handleLogout);
+  }, []);
+
   return (
     <AuthContext.Provider value={{ user, setUser }}>
       {children}
