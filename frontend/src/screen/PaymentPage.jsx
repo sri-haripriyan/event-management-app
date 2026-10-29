@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Fetchevent, getAppliedEvents, getGroupByEventId } from "../services/api.js";
 import { useQuery } from "@tanstack/react-query";
 import { loadRazorpayScript } from "../utils/razorpay.js";
@@ -8,6 +8,8 @@ import { MdOutlineArrowBackIosNew } from "react-icons/md";
 import { toast } from "react-toastify";
 const PaymentPage = () => {
 	const params = useParams();
+	const navigate = useNavigate();
+	const location = useLocation();
 	const [selectedEvent, setSelectedEvent] = useState("");
 	const [selectedEventName, setSelectedEventName] = useState("");
 	const [pending, setPending] = useState("idle");
@@ -16,8 +18,6 @@ const PaymentPage = () => {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [mobile, setMobile] = useState("");
-
-	const navigate = useNavigate();
 
 	const { data: eventDetails } = useQuery({
 		queryKey: ["eventId", params.eventId],
@@ -34,17 +34,34 @@ const PaymentPage = () => {
 		queryFn: () => getAppliedEvents(params.eventId),
 	});
 
-	// **Filter Dropdown Options when data changes**
+	// **Filter Dropdown Options when data changes and preselect target sub-event**
 	useEffect(() => {
 		if (data && Array.isArray(appliedEvents?.groupIds)) {
 			const filteredGroups = data.filter(
 				(group) => !appliedEvents.groupIds.some((applied) => applied._id === group._id)
 			);
 			setDropDown(filteredGroups);
-			setSelectedEvent("");
-			setSelectedEventName("");
+
+			const searchParams = new URLSearchParams(location.search);
+			const targetId =
+				location.state?.groupId ||
+				location.state?.selectedGroupIds?.[0] ||
+				searchParams.get("groupId") ||
+				searchParams.get("groupIds")?.split(",")[0];
+
+			if (targetId && filteredGroups.some((g) => g._id === targetId)) {
+				const preselected = filteredGroups.find((g) => g._id === targetId);
+				setSelectedEvent(targetId);
+				setSelectedEventName(preselected?.name || "");
+			} else if (filteredGroups.length === 1) {
+				setSelectedEvent(filteredGroups[0]._id);
+				setSelectedEventName(filteredGroups[0].name || "");
+			} else {
+				setSelectedEvent("");
+				setSelectedEventName("");
+			}
 		}
-	}, [data, appliedEvents]);
+	}, [data, appliedEvents, location]);
 	console.log("selectedevent: " + selectedEvent);
 	console.log(appliedEvents);
 

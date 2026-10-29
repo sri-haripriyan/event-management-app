@@ -145,9 +145,30 @@ export const request = async (data) => {
   });
 };
 
+export const bulkJoinRequest = async ({ groupIds, eventId }) => {
+  return axios.post(
+    `${BASE_URL}/api/group/request`,
+    { groupIds, eventId },
+    { withCredentials: true }
+  );
+};
+
 export const getGroupJoinRequests = async () => {
   return axios
     .get(`${BASE_URL}/api/group/r/request`, { withCredentials: true })
+    .then((res) => res.data);
+};
+
+export const getUserJoinRequests = async (eventId) => {
+  const url = eventId
+    ? `${BASE_URL}/api/group/user/requests/${eventId}`
+    : `${BASE_URL}/api/group/user/requests`;
+  return axios.get(url, { withCredentials: true }).then((res) => res.data);
+};
+
+export const getUserEventRequestStatus = async (eventId) => {
+  return axios
+    .get(`${BASE_URL}/api/group/status/${eventId}`, { withCredentials: true })
     .then((res) => res.data);
 };
 

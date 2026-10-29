@@ -7,6 +7,8 @@ const Avatar = ({ size, name = "Guest", imageUrl, className = "", onClick, disab
 
   const getSizeClass = () => {
     switch (size) {
+      case "xs":
+        return "w-6 h-6 text-xs";
       case "sm":
         return "w-8 h-8 text-sm";
       case "md":
@@ -15,6 +17,8 @@ const Avatar = ({ size, name = "Guest", imageUrl, className = "", onClick, disab
         return "w-16 h-16 text-lg";
       case "xl":
         return "h-24 w-24 text-lg";
+      case "full":
+        return "w-full h-full text-xs";
       default:
         return "w-10 h-10 text-md"; // Default size
     }
@@ -34,6 +38,9 @@ const Avatar = ({ size, name = "Guest", imageUrl, className = "", onClick, disab
     }
   };
 
+  const hasCustomSize = /\b(w-|h-)/.test(className);
+  const sizeClass = hasCustomSize ? "" : getSizeClass();
+
   return (
     <div
       onClick={handleClick}
@@ -41,12 +48,16 @@ const Avatar = ({ size, name = "Guest", imageUrl, className = "", onClick, disab
       tabIndex={!disableNavigate || onClick ? 0 : undefined}
       className={`flex items-center justify-center rounded-full overflow-hidden shrink-0 select-none ${
         !disableNavigate || onClick ? "cursor-pointer transition-transform hover:scale-105 active:scale-95" : ""
-      } ${getSizeClass()} ${className}`}
+      } ${sizeClass} ${className}`.trim()}
       style={!imageUrl ? { backgroundColor: bgColor, color: "#ffffff" } : {}}
       title={name || "Profile"}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt={name || "Avatar"} className="w-full h-full object-cover" />
+        <img
+          src={imageUrl}
+          alt={name || "Avatar"}
+          className="w-full h-full object-cover object-center block"
+        />
       ) : (
         <span className="font-bold text-white leading-none">{safeName.charAt(0).toUpperCase()}</span>
       )}

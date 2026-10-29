@@ -22,6 +22,8 @@ const joinRequestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+joinRequestSchema.index({ user: 1, group: 1 }, { unique: true });
+
 const JoinRequest = mongoose.model("JoinRequest", joinRequestSchema);
 
 export default JoinRequest;
