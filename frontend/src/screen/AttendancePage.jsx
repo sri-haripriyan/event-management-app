@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
-import { getEventAttendance, markEventAttendance } from "../services/api";
+import { getEventAttendance, markEventAttendance, getGroupByEventId } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
 
@@ -22,6 +22,7 @@ const AttendancePage = () => {
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'present' | 'absent'
+  const [trackFilter, setTrackFilter] = useState("all"); // 'all' | chosen sub-event track name
 
   // Scanner state & Synchronous lock
   const html5QrCodeRef = useRef(null);
@@ -54,12 +55,70 @@ const AttendancePage = () => {
     [attendanceData?.attendances]
   );
 
-  const presentCount = useMemo(
-    () => attendances.filter((a) => a.isAttended === true).length,
-    [attendances]
-  );
-  const totalCount = attendances.length;
-  const absentCount = totalCount - presentCount;
+  // Fetch sub-events/groups for this event
+  const { data: eventGroups } = useQuery({
+    queryKey: ["getGroupByEventId", eventId],
+    queryFn: () => getGroupByEventId(eventId),
+    enabled: !!eventId && !!user,
+  });
+
+  // Unique sub-event tracks for selection
+  const availableTracks = useMemo(() => {
+    const list = [];
+    const seenNames = new Set();
+
+    if (Array.isArray(eventGroups)) {
+      eventGroups.forEach((g) => {
+        const name = g?.name?.trim();
+        if (name && !seenNames.has(name.toLowerCase())) {
+          seenNames.add(name.toLowerCase());
+          list.push({ id: g._id || name, name });
+        }
+      });
+    }
+
+    if (Array.isArray(attendanceData?.groups)) {
+      attendanceData.groups.forEach((g) => {
+        const name = g?.name?.trim();
+        if (name && !seenNames.has(name.toLowerCase())) {
+          seenNames.add(name.toLowerCase());
+          list.push({ id: g._id || name, name });
+        }
+      });
+    }
+
+    attendances.forEach((a) => {
+      const name = (a.appliedTo || "General Entry").trim();
+      if (!seenNames.has(name.toLowerCase())) {
+        seenNames.add(name.toLowerCase());
+        list.push({ id: name, name });
+      }
+    });
+
+    return list;
+  }, [eventGroups, attendanceData?.groups, attendances]);
+
+  // Attendances filtered by chosen sub-event track
+  const trackFilteredAttendances = useMemo(() => {
+    if (trackFilter === "all") return attendances;
+    return attendances.filter(
+      (a) =>
+        (a.appliedTo || "General Entry").trim().toLowerCase() ===
+        trackFilter.trim().toLowerCase()
+    );
+  }, [attendances, trackFilter]);
+
+  // Dynamic statistics computed strictly for the chosen sub-event track
+  const currentTrackStats = useMemo(() => {
+    const total = trackFilteredAttendances.length;
+    const present = trackFilteredAttendances.filter((a) => a.isAttended === true).length;
+    const absent = total - present;
+    return { total, present, absent };
+  }, [trackFilteredAttendances]);
+
+  const presentCount = currentTrackStats.present;
+  const totalCount = currentTrackStats.total;
+  const absentCount = currentTrackStats.absent;
 
   // Processing state for row-specific manual check-in
   const [processingApplicantId, setProcessingApplicantId] = useState(null);
@@ -341,9 +400,9 @@ const AttendancePage = () => {
     };
   }, []);
 
-  // Filtered Attendees list
+  // Filtered Attendees list (track filter + search query + status filter)
   const filteredAttendances = useMemo(() => {
-    let list = [...attendances];
+    let list = [...trackFilteredAttendances];
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -351,8 +410,8 @@ const AttendancePage = () => {
         (a) =>
           a.userName?.toLowerCase().includes(q) ||
           a.email?.toLowerCase().includes(q) ||
-          String(a.appliedTo).toLowerCase().includes(q) ||
-          String(a._id).toLowerCase().includes(q)
+          String(a.appliedTo || "").toLowerCase().includes(q) ||
+          String(a._id || "").toLowerCase().includes(q)
       );
     }
 
@@ -363,7 +422,7 @@ const AttendancePage = () => {
     }
 
     return list;
-  }, [attendances, searchQuery, statusFilter]);
+  }, [trackFilteredAttendances, searchQuery, statusFilter]);
 
   // Handle Manual Quick Check-In
   const handleManualCheckIn = async (applicant) => {
@@ -407,10 +466,11 @@ const AttendancePage = () => {
           <div className="flex items-center gap-3 mt-2">
             <button
               type="button"
-              onClick={() => navigate(`/events/${eventId}`)}
-              className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-on-surface transition-colors"
+              onClick={() => (eventId ? navigate(`/events/${eventId}`) : navigate(-1))}
+              className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-on-surface transition-colors flex items-center gap-1.5"
             >
-              Back to Event
+              <span className="material-symbols-outlined text-base">arrow_back</span>
+              <span>Back to Event</span>
             </button>
             {!isForbidden && (
               <button
@@ -428,18 +488,21 @@ const AttendancePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary">
+    <div className="min-h-screen bg-surface font-body-md text-on-surface flex flex-col selection:bg-primary-container selection:text-on-primary pt-16">
       {/* Header Bar */}
-      <header className="sticky top-0 z-30 bg-surface/80 backdrop-blur-xl border-b border-surface-container-high/60 px-6 py-4">
+      <header className="sticky top-16 z-30 bg-surface/85 backdrop-blur-xl border-b border-surface-container-high/60 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate(`/events/${eventId}`)}
-              className="w-10 h-10 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface flex items-center justify-center transition-colors shrink-0 shadow-sm"
+              onClick={() => (eventId ? navigate(`/events/${eventId}`) : navigate(-1))}
+              className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface transition-all shadow-sm shrink-0 font-medium text-xs sm:text-sm"
               title="Return to event page"
             >
-              <span className="material-symbols-outlined text-xl">arrow_back</span>
+              <span className="material-symbols-outlined text-lg group-hover:-translate-x-0.5 transition-transform">
+                arrow_back
+              </span>
+              <span className="font-semibold">Back to Event</span>
             </button>
 
             <div className="flex flex-col min-w-0">
@@ -455,20 +518,14 @@ const AttendancePage = () => {
             </div>
           </div>
 
-          {/* Quick Metrics Header Pills */}
+          {/* Sub-Event Track Indicator */}
           <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/20 text-xs font-semibold">
-              <span className="text-on-surface-variant">Total:</span>
-              <span className="text-on-surface">{totalCount}</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Present: {presentCount}</span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span>Absent: {absentCount}</span>
-            </div>
+            <span className="text-xs text-on-surface-variant hidden sm:inline">
+              Selected Track:
+            </span>
+            <span className="px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/30 text-xs font-semibold text-primary-container truncate max-w-[200px]">
+              {trackFilter === "all" ? "All Sub-Events" : trackFilter}
+            </span>
           </div>
         </div>
       </header>
@@ -477,17 +534,97 @@ const AttendancePage = () => {
       <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Attendee Roster Table (7 cols on lg) */}
         <section className="lg:col-span-7 flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary-container text-xl">
-                groups
+          {/* Section Header: Title and Sub-Event Track Dropdown Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-4 rounded-2xl border border-outline-variant/30 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-xl">groups</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-extrabold text-on-surface">Registered Attendees</h2>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-semibold">
+                    {filteredAttendances.length}
+                  </span>
+                </div>
+                <p className="text-[11px] text-on-surface-variant">
+                  {trackFilter === "all"
+                    ? "Showing all registered attendees across all sub-events"
+                    : `Filtered by sub-event track: ${trackFilter}`}
+                </p>
+              </div>
+            </div>
+
+            {/* Sub-Event Track Filter Dropdown */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <label htmlFor="track-filter-select" className="text-xs font-semibold text-on-surface-variant whitespace-nowrap">
+                Sub-Event:
+              </label>
+              <select
+                id="track-filter-select"
+                value={trackFilter}
+                onChange={(e) => setTrackFilter(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface text-xs font-semibold outline-none focus:border-primary-container cursor-pointer transition shadow-xs max-w-[220px] truncate"
+              >
+                <option value="all">
+                  All Sub-Events {availableTracks.length > 0 ? `(${availableTracks.length})` : ""}
+                </option>
+                {availableTracks.map((t) => (
+                  <option key={t.id || t.name} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Chosen Sub-Event Attendance Metrics (Total, Present, Absent) */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3.5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 flex flex-col items-center justify-center text-center shadow-xs">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-on-surface-variant">
+                Total
               </span>
-              <h2 className="text-lg font-bold text-on-surface">Registered Attendees</h2>
-              <span className="text-xs text-on-surface-variant font-medium">
-                ({filteredAttendances.length})
+              <span className="text-2xl font-extrabold text-on-surface mt-0.5">
+                {currentTrackStats.total}
+              </span>
+              <span className="text-[10px] text-on-surface-variant/80 truncate max-w-full px-1">
+                {trackFilter === "all" ? "All Sub-Events" : trackFilter}
               </span>
             </div>
 
+            <div className="p-3.5 rounded-2xl bg-emerald-950/20 dark:bg-emerald-950/40 border border-emerald-500/30 flex flex-col items-center justify-center text-center shadow-xs">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Present
+              </span>
+              <span className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300 mt-0.5">
+                {currentTrackStats.present}
+              </span>
+              <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80">
+                {currentTrackStats.total > 0
+                  ? `${Math.round((currentTrackStats.present / currentTrackStats.total) * 100)}% checked in`
+                  : "0%"}
+              </span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-950/20 dark:bg-amber-950/40 border border-amber-500/30 flex flex-col items-center justify-center text-center shadow-xs">
+              <span className="text-[10px] uppercase tracking-wider font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                Absent
+              </span>
+              <span className="text-2xl font-extrabold text-amber-700 dark:text-amber-300 mt-0.5">
+                {currentTrackStats.absent}
+              </span>
+              <span className="text-[10px] text-amber-600/80 dark:text-amber-400/80">
+                {currentTrackStats.total > 0
+                  ? `${Math.round((currentTrackStats.absent / currentTrackStats.total) * 100)}% remaining`
+                  : "0%"}
+              </span>
+            </div>
+          </div>
+
+          {/* Status Tabs and Search */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Filter Toggle Buttons */}
             <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/20 text-xs">
               <button
@@ -499,7 +636,7 @@ const AttendancePage = () => {
                     : "text-on-surface-variant hover:text-on-surface"
                 }`}
               >
-                All ({totalCount})
+                All ({currentTrackStats.total})
               </button>
               <button
                 type="button"
@@ -511,7 +648,7 @@ const AttendancePage = () => {
                 }`}
               >
                 <span>Present</span>
-                <span className="text-[10px] opacity-80">({presentCount})</span>
+                <span className="text-[10px] opacity-80">({currentTrackStats.present})</span>
               </button>
               <button
                 type="button"
@@ -523,7 +660,7 @@ const AttendancePage = () => {
                 }`}
               >
                 <span>Absent</span>
-                <span className="text-[10px] opacity-80">({absentCount})</span>
+                <span className="text-[10px] opacity-80">({currentTrackStats.absent})</span>
               </button>
             </div>
           </div>
@@ -535,7 +672,11 @@ const AttendancePage = () => {
             </span>
             <input
               type="text"
-              placeholder="Search by attendee name, email, or track..."
+              placeholder={
+                trackFilter === "all"
+                  ? "Search attendees by name, email, or track..."
+                  : `Search ${trackFilter} attendees by name, email...`
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-surface-container-low rounded-xl text-xs text-on-surface placeholder:text-outline border border-outline-variant/20 focus:outline-none focus:border-primary-container"

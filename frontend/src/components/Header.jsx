@@ -147,6 +147,18 @@ const Header = () => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
             </button>
 
+            {/* Post an event Button (Only for logged-in users) */}
+            {user && (
+              <button
+                type="button"
+                onClick={() => navigate("/create-events")}
+                className="inline-flex items-center gap-1.5 font-label-md text-label-md font-semibold px-3.5 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-surface-tint shadow-sm transition-all active:scale-95 shrink-0"
+              >
+                <span className="material-symbols-outlined text-base">add</span>
+                <span>Post an event</span>
+              </button>
+            )}
+
             {/* Top Avatar Circle or Login Button */}
             <div className="flex items-center gap-space-sm pl-2">
               {user ? (
@@ -214,6 +226,21 @@ const Header = () => {
 
           {/* Mobile Navigation Links */}
           <nav className="flex flex-col gap-2">
+            {/* Post an event Button (Only for logged-in users) */}
+            {user && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigate("/create-events");
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full py-2.5 px-4 mb-2 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 shadow-sm hover:bg-surface-tint transition-all"
+              >
+                <span className="material-symbols-outlined text-lg">add</span>
+                <span>Post an event</span>
+              </button>
+            )}
+
             <NavLink
               to="/events"
               onClick={() => setMobileMenuOpen(false)}

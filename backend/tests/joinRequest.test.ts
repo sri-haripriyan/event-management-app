@@ -1,3 +1,6 @@
+import Application from "../models/applicationModel.js";
+import User from "../models/userModel.js";
+import Event from "../models/eventModel.js";
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
@@ -8,7 +11,9 @@ import {
   approveRequest,
   getGroupByEventId,
   getUserEventRequestStatus,
+  getEventJoinRequests,
 } from "../controllers/groupController.js";
+import { getEventAttendance } from "../controllers/ticketController.js";
 
 const createMockReqRes = (body: any = {}, params: any = {}, user: any = null, cookies: any = {}) => {
   const req: any = {
@@ -38,6 +43,10 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
   const mockGroupId1 = new mongoose.Types.ObjectId();
   const mockGroupId2 = new mongoose.Types.ObjectId();
   const mockEventId = new mongoose.Types.ObjectId();
+  (User as any).findByIdAndUpdate = () => Promise.resolve({});
+  (User as any).findOneAndUpdate = () => Promise.resolve({});
+  (Application as any).findOne = () => Promise.resolve(null);
+  (Application as any).create = () => Promise.resolve({ _id: "mockApp" });
 
   test("1. Returns 400 if groupId is missing in joinRequest", async () => {
     const { req, res } = createMockReqRes({}, {}, { _id: mockUserId });
@@ -397,6 +406,404 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
       JoinRequest.find = originalJoinRequestFind;
       JoinRequest.create = originalJoinRequestCreate;
       Group.findByIdAndUpdate = originalGroupFindByIdAndUpdate;
+    }
+  });
+
+  test("11. approveRequest can transition state from approved back to pending", async () => {
+    const originalFindById = JoinRequest.findById;
+    const originalGroupFindByIdAndUpdate = Group.findByIdAndUpdate;
+
+    const mockJoinReq = {
+      _id: new mongoose.Types.ObjectId(),
+      user: mockUserId,
+      status: "approved",
+      group: {
+        _id: mockGroupId1,
+        members: [mockUserId],
+        requests: [],
+        limit: 20,
+        admin: mockAdminId,
+      },
+      save: function () {
+        return Promise.resolve(this);
+      },
+    };
+
+    (JoinRequest as any).findById = () => ({
+      populate: () => Promise.resolve(mockJoinReq),
+    });
+    (Group as any).findByIdAndUpdate = () => Promise.resolve({});
+
+    try {
+      const { req, res } = createMockReqRes(
+        { requestId: mockJoinReq._id.toString(), action: "pending" },
+        {},
+        { _id: mockAdminId }
+      );
+      await approveRequest(req, res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.jsonData.status, "pending");
+      assert.equal(mockJoinReq.status, "pending");
+    } finally {
+      JoinRequest.findById = originalFindById;
+      Group.findByIdAndUpdate = originalGroupFindByIdAndUpdate;
+    }
+  });
+
+  test("12. approveRequest can transition state from rejected to approved", async () => {
+    const originalFindById = JoinRequest.findById;
+    const originalGroupFindByIdAndUpdate = Group.findByIdAndUpdate;
+
+    const mockJoinReq = {
+      _id: new mongoose.Types.ObjectId(),
+      user: mockUserId,
+      status: "rejected",
+      group: {
+        _id: mockGroupId1,
+        members: [],
+        requests: [],
+        limit: 20,
+        eventId: mockEventId,
+        name: "Test Group",
+        admin: mockAdminId,
+      },
+      save: function () {
+        return Promise.resolve(this);
+      },
+    };
+
+    (JoinRequest as any).findById = () => ({
+      populate: () => Promise.resolve(mockJoinReq),
+    });
+    (Group as any).findByIdAndUpdate = () => Promise.resolve({});
+
+    try {
+      const { req, res } = createMockReqRes(
+        { requestId: mockJoinReq._id.toString(), action: "approve" },
+        {},
+        { _id: mockAdminId }
+      );
+      await approveRequest(req, res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.jsonData.status, "approved");
+      assert.equal(mockJoinReq.status, "approved");
+    } finally {
+      JoinRequest.findById = originalFindById;
+      Group.findByIdAndUpdate = originalGroupFindByIdAndUpdate;
+    }
+  });
+
+  test("13. getEventJoinRequests returns all join requests and status counts for an event", async () => {
+    const origEventFindById = Event.findById;
+    const origGroupFind = Group.find;
+    const origJoinRequestFind = JoinRequest.find;
+
+    (Event as any).findById = () => ({
+      populate: () =>
+        Promise.resolve({
+          _id: mockEventId,
+          title: "HackCon 2026",
+          userId: mockAdminId,
+        }),
+    });
+
+    (Group as any).find = () =>
+      Promise.resolve([
+        {
+          _id: mockGroupId1,
+          name: "Track A",
+          limit: 30,
+          members: [],
+          moderators: [],
+          admin: mockAdminId,
+        },
+      ]);
+
+    const mockReqs = [
+      {
+        _id: new mongoose.Types.ObjectId(),
+        status: "pending",
+        user: { userName: "Alice", email: "alice@test.com" },
+        group: { name: "Track A", _id: mockGroupId1 },
+      },
+      {
+        _id: new mongoose.Types.ObjectId(),
+        status: "approved",
+        user: { userName: "Bob", email: "bob@test.com" },
+        group: { name: "Track A", _id: mockGroupId1 },
+      },
+    ];
+
+    (JoinRequest as any).find = () => ({
+      populate: () => ({
+        populate: () => ({
+          sort: () => Promise.resolve(mockReqs),
+        }),
+      }),
+    });
+
+    try {
+      const { req, res } = createMockReqRes({}, { eventId: mockEventId.toString() }, { _id: mockAdminId });
+      await getEventJoinRequests(req, res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.jsonData.success, true);
+      assert.equal(res.jsonData.counts.total, 2);
+      assert.equal(res.jsonData.counts.pending, 1);
+      assert.equal(res.jsonData.counts.approved, 1);
+      assert.equal(res.jsonData.counts.rejected, 0);
+      assert.equal(res.jsonData.requests.length, 2);
+    } finally {
+      Event.findById = origEventFindById;
+      Group.find = origGroupFind;
+      JoinRequest.find = origJoinRequestFind;
+    }
+  });
+
+  test("14. getGroupByEventId returns admin, moderators, isAdmin, and isModerator fields", async () => {
+    const origGroupFind = Group.find;
+    const origJoinRequestFind = JoinRequest.find;
+
+    const mockModId = new mongoose.Types.ObjectId();
+    const mockRegularUserId = new mongoose.Types.ObjectId();
+
+    (Group as any).find = () =>
+      Promise.resolve([
+        {
+          _id: mockGroupId1,
+          name: "SubEvent Admin Track",
+          members: [mockUserId],
+          moderators: [mockModId],
+          admin: mockAdminId,
+          limit: 30,
+          isHead: false,
+        },
+      ]);
+
+    (JoinRequest as any).find = () => ({
+      lean: () => Promise.resolve([]),
+    });
+
+    try {
+      // 1. Caller is Admin
+      const { req: reqAdmin, res: resAdmin } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockAdminId }
+      );
+      await getGroupByEventId(reqAdmin, resAdmin);
+      assert.equal(resAdmin.statusCode, 200);
+      assert.equal(resAdmin.jsonData[0].isAdmin, true);
+      assert.equal(resAdmin.jsonData[0].isModerator, false);
+      assert.equal(resAdmin.jsonData[0].admin.toString(), mockAdminId.toString());
+      assert.equal(resAdmin.jsonData[0].moderators[0].toString(), mockModId.toString());
+
+      // 2. Caller is Moderator
+      const { req: reqMod, res: resMod } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockModId }
+      );
+      await getGroupByEventId(reqMod, resMod);
+      assert.equal(resMod.statusCode, 200);
+      assert.equal(resMod.jsonData[0].isAdmin, false);
+      assert.equal(resMod.jsonData[0].isModerator, true);
+
+      // 3. Caller is Regular User
+      const { req: reqUser, res: resUser } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockRegularUserId }
+      );
+      await getGroupByEventId(reqUser, resUser);
+      assert.equal(resUser.statusCode, 200);
+      assert.equal(resUser.jsonData[0].isAdmin, false);
+      assert.equal(resUser.jsonData[0].isModerator, false);
+    } finally {
+      Group.find = origGroupFind;
+      JoinRequest.find = origJoinRequestFind;
+    }
+  });
+
+  test("15. getEventJoinRequests allows moderator and creator, but blocks regular attendee with 403", async () => {
+    const origEventFindById = Event.findById;
+    const origGroupFind = Group.find;
+    const origJoinRequestFind = JoinRequest.find;
+
+    const mockModId = new mongoose.Types.ObjectId();
+    const mockRegularUserId = new mongoose.Types.ObjectId();
+    const mockCreatorId = new mongoose.Types.ObjectId();
+
+    (Event as any).findById = () => ({
+      populate: () =>
+        Promise.resolve({
+          _id: mockEventId,
+          title: "Tech Fest 2026",
+          userId: mockCreatorId,
+        }),
+    });
+
+    (Group as any).find = () =>
+      Promise.resolve([
+        {
+          _id: mockGroupId1,
+          name: "Coding Contest",
+          limit: 25,
+          members: [],
+          moderators: [mockModId],
+          admin: mockAdminId,
+        },
+      ]);
+
+    (JoinRequest as any).find = () => ({
+      populate: () => ({
+        populate: () => ({
+          sort: () => Promise.resolve([]),
+        }),
+      }),
+    });
+
+    try {
+      // 1. Event Creator should be allowed (200)
+      const { req: reqCreator, res: resCreator } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockCreatorId }
+      );
+      await getEventJoinRequests(reqCreator, resCreator);
+      assert.equal(resCreator.statusCode, 200);
+
+      // 2. Sub-event Moderator should be allowed (200)
+      const { req: reqMod, res: resMod } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockModId }
+      );
+      await getEventJoinRequests(reqMod, resMod);
+      assert.equal(resMod.statusCode, 200);
+
+      // 3. Regular attendee should be blocked with 403
+      const { req: reqRegular, res: resRegular } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockRegularUserId }
+      );
+      await getEventJoinRequests(reqRegular, resRegular);
+      assert.equal(resRegular.statusCode, 403);
+      assert.match(resRegular.jsonData.message, /Access denied/i);
+    } finally {
+      Event.findById = origEventFindById;
+      Group.find = origGroupFind;
+      JoinRequest.find = origJoinRequestFind;
+    }
+  });
+
+  test("16. getEventAttendance allows creator and sub-event moderator, but blocks regular attendee with 403", async () => {
+    const origEventFindById = Event.findById;
+    const origGroupExists = Group.exists;
+    const origAppFind = Application.find;
+
+    const mockCreatorId = new mongoose.Types.ObjectId();
+    const mockModId = new mongoose.Types.ObjectId();
+    const mockRegularUserId = new mongoose.Types.ObjectId();
+
+    (Event as any).findById = () => ({
+      populate: () =>
+        Promise.resolve({
+          _id: mockEventId,
+          title: "Hackathon",
+          userId: mockCreatorId,
+          eventDate: "2026-12-01",
+        }),
+    });
+
+    (Group as any).exists = (query: any) => {
+      // Check if query is looking for moderator
+      if (query?.$or?.some((clause: any) => clause.moderators === mockModId.toString())) {
+        return Promise.resolve({ _id: mockGroupId1 });
+      }
+      return Promise.resolve(null);
+    };
+
+    (Group as any).find = () => ({
+      select: () => ({
+        lean: () =>
+          Promise.resolve([
+            { _id: mockGroupId1, name: "Coding Contest", limit: 30 },
+          ]),
+      }),
+    });
+
+    (Application as any).find = () => ({
+      populate: () => ({
+        sort: () => ({
+          lean: () => Promise.resolve([]),
+        }),
+      }),
+    });
+
+    try {
+      // 1. Event Creator should be authorized (200)
+      const { req: reqCreator, res: resCreator } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockCreatorId }
+      );
+      await getEventAttendance(reqCreator, resCreator);
+      assert.equal(resCreator.statusCode, 200);
+      assert.equal(resCreator.jsonData.success, true);
+
+      // 2. Sub-event Moderator should be authorized (200)
+      const { req: reqMod, res: resMod } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockModId }
+      );
+      await getEventAttendance(reqMod, resMod);
+      assert.equal(resMod.statusCode, 200);
+      assert.equal(resMod.jsonData.success, true);
+
+      // 3. Regular attendee should be blocked (403)
+      const { req: reqRegular, res: resRegular } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockRegularUserId }
+      );
+      await getEventAttendance(reqRegular, resRegular);
+      assert.equal(resRegular.statusCode, 403);
+      assert.match(resRegular.jsonData.message, /Access denied/i);
+    } finally {
+      Event.findById = origEventFindById;
+      Group.exists = origGroupExists;
+      Application.find = origAppFind;
+    }
+  });
+
+  test("17. getEventJoinRequests returns 400 if event is a paid event", async () => {
+    const origEventFindById = Event.findById;
+
+    (Event as any).findById = () => ({
+      populate: () =>
+        Promise.resolve({
+          _id: mockEventId,
+          title: "HackCon 2026 Paid",
+          userId: mockAdminId,
+          paid: true,
+          amount: 500,
+        }),
+    });
+
+    try {
+      const { req, res } = createMockReqRes(
+        {},
+        { eventId: mockEventId.toString() },
+        { _id: mockAdminId }
+      );
+
+      await getEventJoinRequests(req, res);
+      assert.equal(res.statusCode, 400);
+      assert.match(res.jsonData.message, /not applicable for paid events/i);
+    } finally {
+      Event.findById = origEventFindById;
     }
   });
 });

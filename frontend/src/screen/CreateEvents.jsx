@@ -14,7 +14,7 @@ import "react-datepicker/dist/react-datepicker.css";
 const steps = [
 	{ label: "Group Details", icon: FaUsers },
 	{ label: "Sub Events", icon: MdEmojiEvents },
-	{ label: "foods", icon: IoFastFoodSharp },
+	{ label: "Inclusions", icon: IoFastFoodSharp },
 ];
 
 const CreateEvents = () => {
@@ -77,6 +77,10 @@ const CreateEvents = () => {
 			toast.info("There should be atleast 1 Sub-Event!", {
 				autoClose: 2000,
 			});
+			return;
+		}
+		if (formData.paid && (!formData.amount || Number(formData.amount) <= 0)) {
+			toast.info("Please enter a valid registration amount for paid sub-events", { autoClose: 2000 });
 			return;
 		}
 		if (!formData.paid) formData.amount = 0;
@@ -152,9 +156,11 @@ const CreateEvents = () => {
 		if (step > 1) setStep((prev) => prev - 1);
 	};
 	const nextStep = () => {
+		if (step === 2 && formData.paid && (!formData.amount || Number(formData.amount) <= 0)) {
+			toast.info("Please enter a valid registration amount for paid sub-events", { autoClose: 2000 });
+			return;
+		}
 		if (step < steps.length) setStep((prev) => prev + 1);
-		
-		
 	};
   const BackButton = () => {
     return (
@@ -433,6 +439,84 @@ const CreateEvents = () => {
                 </div>
               </div>
 
+              {/* Sub-Events Registration Pricing */}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 space-y-4 shadow-sm">
+                <label className="relative flex items-center justify-between cursor-pointer p-1">
+                  <div className="flex flex-col pr-4">
+                    <span className="text-sm font-bold text-on-surface uppercase tracking-wider text-xs">
+                      Paid Event
+                    </span>
+                    <span className="text-[11px] text-on-surface-variant">
+                      Enable registration fee for each sub-event
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    id="paid"
+                    checked={formData?.paid}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      setFormData((prev) => ({
+                        ...prev,
+                        paid: isChecked,
+                        amount: isChecked ? (prev.amount && prev.amount > 0 ? prev.amount : "") : 0,
+                      }));
+                    }}
+                  />
+                  <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                </label>
+
+                <div className="flex justify-between items-center gap-4 pt-3 border-t border-outline-variant/20">
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="amount"
+                      className={`text-sm font-medium transition-colors ${
+                        formData?.paid ? "text-on-surface" : "text-on-surface-variant/70"
+                      }`}
+                    >
+                      Amount per Sub-Event (INR)
+                    </label>
+                    <span className="text-[11px] text-on-surface-variant/80">
+                      {formData?.paid
+                        ? "Fee charged per selected sub-event registration"
+                        : "Enable 'Paid Event' switch above to set amount"}
+                    </span>
+                  </div>
+                  <div className="w-1/2 flex justify-end">
+                    <div className="relative w-full max-w-[180px]">
+                      <span
+                        className={`absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold transition-colors ${
+                          formData?.paid ? "text-primary-container" : "text-outline/40"
+                        }`}
+                      >
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        name="amount"
+                        id="amount"
+                        disabled={!formData?.paid}
+                        value={formData?.paid ? (formData?.amount === 0 ? "" : formData?.amount) : 0}
+                        min={1}
+                        max={10000}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? "" : Math.max(0, parseInt(e.target.value) || 0);
+                          setFormData((prev) => ({ ...prev, amount: val }));
+                        }}
+                        className={`w-full bg-surface-container-low border rounded-xl pl-8 pr-3 py-2 text-on-surface text-right outline-none text-sm transition ${
+                          formData?.paid
+                            ? "border-outline-variant/40 focus:border-primary-container focus:ring-1 focus:ring-primary-container/30 cursor-text"
+                            : "border-outline-variant/20 bg-surface-container-high/40 text-on-surface-variant/40 cursor-not-allowed select-none"
+                        }`}
+                        placeholder={formData?.paid ? "Amount" : "0"}
+                        required={formData?.paid}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Navigation controls */}
               <div className="pt-4 flex justify-between">
                 <button
@@ -453,12 +537,12 @@ const CreateEvents = () => {
             </div>
           )}
 
-          {/* STEP 3: FOODS & PAYMENT */}
+          {/* STEP 3: EVENT INCLUSIONS */}
           {step === 3 && (
             <div className="space-y-6 animate-fade-in">
               <div>
-                <h2 className="text-xl font-bold text-on-surface mb-1">Inclusions & Tickets</h2>
-                <p className="text-on-surface-variant text-xs font-normal">Set up refreshments, swags, and ticket prices for registration</p>
+                <h2 className="text-xl font-bold text-on-surface mb-1">Event Inclusions</h2>
+                <p className="text-on-surface-variant text-xs font-normal">Set up refreshments and swags for attendees</p>
               </div>
 
               {/* Inclusions */}
@@ -492,41 +576,6 @@ const CreateEvents = () => {
                     <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                   </label>
                 </div>
-              </div>
-
-              {/* Payments */}
-              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-5 space-y-4 shadow-sm">
-                <label className="relative flex items-center justify-between cursor-pointer p-1">
-                  <span className="text-sm font-bold text-on-surface uppercase tracking-wider text-xs">Paid Ticket Required</span>
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    id="paid"
-                    checked={formData?.paid}
-                    onChange={(e) => handleChangefoods("paid", e.target.value)}
-                  />
-                  <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary-container after:absolute after:top-1.5 after:right-5 peer-checked:after:translate-x-4 after:bg-white after:border-0 after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
-                </label>
-
-                {formData?.paid && (
-                  <div className="flex justify-between items-center gap-4 pt-3 border-t border-outline-variant/20 animate-fade-in">
-                    <label htmlFor="amount" className="text-sm text-on-surface-variant font-medium">
-                      Ticket Price (INR)
-                    </label>
-                    <input
-                      type="number"
-                      name="amount"
-                      id="amount"
-                      value={formData?.amount}
-                      min={1}
-                      max={5000}
-                      onChange={(e) => handleChangefoods("amount", e.target.value)}
-                      className="w-1/2 bg-surface-container-low border border-outline-variant/40 focus:border-primary-container rounded-xl px-4 py-2 text-on-surface text-right outline-none text-sm focus:ring-1 focus:ring-primary-container/30"
-                      placeholder="Amount"
-                      required
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Navigation controls */}

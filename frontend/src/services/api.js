@@ -17,7 +17,7 @@ axios.interceptors.response.use(
 
 // Fetch blogs
 export const fetchBlogs = async ({ queryKey }) => {
-  const [key, page] = queryKey;
+  const [, page] = queryKey;
   const { data } = await axios.get(
     `${BASE_URL}/api/events?page=${page}&limit=10`
   );
@@ -208,3 +208,46 @@ export const sendMessage = (message, groupId) =>
     { message, groupId },
     { withCredentials: true }
   );
+
+
+export const getPaymentSummary = async ({ eventId, groupIds }) => {
+  const ids = Array.isArray(groupIds) ? groupIds.join(",") : (groupIds || "");
+  return axios
+    .get(`${BASE_URL}/api/payment/summary/${eventId}?groupIds=${encodeURIComponent(ids)}`, {
+      withCredentials: true,
+    })
+    .then((res) => res.data);
+};
+
+export const createPaymentOrder = async (payload) => {
+  return axios
+    .post(`${BASE_URL}/api/payment/create-order`, payload, {
+      withCredentials: true,
+    })
+    .then((res) => res.data);
+};
+
+export const verifyPaymentOrder = async (payload) => {
+  return axios
+    .post(`${BASE_URL}/api/payment/verify-payment`, payload, {
+      withCredentials: true,
+    })
+    .then((res) => res.data);
+};
+
+
+export const getEventJoinRequests = async (eventId) => {
+  return axios
+    .get(`${BASE_URL}/api/group/events/${eventId}/requests`, { withCredentials: true })
+    .then((res) => res.data);
+};
+
+export const updateJoinRequestStatus = async ({ requestId, action, status }) => {
+  return axios
+    .post(
+      `${BASE_URL}/api/group/approve`,
+      { requestId, action, status },
+      { withCredentials: true }
+    )
+    .then((res) => res.data);
+};

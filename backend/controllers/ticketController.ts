@@ -1,5 +1,6 @@
 import Application from "../models/applicationModel.js";
 import Event from "../models/eventModel.js";
+import Group from "../models/groupModel.js";
 import { computeTicketStatus } from "../utils/eventTiming.js";
 import logger from "../utils/logger.js";
 
@@ -54,14 +55,24 @@ export const scanTicketCheckIn = async (req: any, res: any) => {
 			});
 		}
 
-		// Authorization: either event creator, host, or the attendee themselves (simulation)
+		// Authorization: either event creator, host, admin, sub-event moderator/admin, or the attendee themselves (simulation)
 		const currentUserId = req.user?._id?.toString();
 		const eventOwnerId = event?.userId?._id?.toString() || event?.userId?.toString();
 		const ticketOwnerId = (existingApp.userId as any)?._id?.toString() || existingApp.userId?.toString();
 
+		let isGroupModeratorOrAdmin = false;
+		if (currentUserId && event?._id) {
+			const groupAdminOrMod = await Group.exists({
+				eventId: event._id,
+				$or: [{ admin: currentUserId }, { moderators: currentUserId }],
+			});
+			if (groupAdminOrMod) isGroupModeratorOrAdmin = true;
+		}
+
 		const isAuthorized =
-			req.user?.isHost ||
+			req.user?.role === "admin" ||
 			currentUserId === eventOwnerId ||
+			isGroupModeratorOrAdmin ||
 			currentUserId === ticketOwnerId;
 
 		if (!isAuthorized) {
@@ -220,21 +231,45 @@ export const getEventAttendance = async (req: any, res: any) => {
 			return res.status(404).json({ message: "Event not found" });
 		}
 
-		// Verify authorization: current user must be creator or host
+		// Verify authorization: current user must be creator, host, admin, or sub-event moderator/admin
 		const currentUserId = req.user?._id?.toString();
 		const eventOwnerId = (event.userId as any)?._id?.toString() || event.userId?.toString();
 
-		const isAuthorized = req.user?.isHost || currentUserId === eventOwnerId;
+		let isGroupModeratorOrAdmin = false;
+		if (currentUserId && eventId) {
+			const groupAdminOrMod = await Group.exists({
+				eventId,
+				$or: [{ admin: currentUserId }, { moderators: currentUserId }],
+			});
+			if (groupAdminOrMod) isGroupModeratorOrAdmin = true;
+		}
+
+		const isAuthorized =
+			req.user?.role === "admin" ||
+			currentUserId === eventOwnerId ||
+			isGroupModeratorOrAdmin;
+
 		if (!isAuthorized) {
 			return res.status(403).json({
-				message: "Access denied: Only event organizers can view attendance records",
+				message: "Access denied: Only event organizers and moderators can view attendance records",
 			});
 		}
 
-		const applications = await Application.find({ eventId })
-			.populate("userId", "userName email profile_image_url")
-			.sort({ createdAt: 1 })
-			.lean();
+		const [applications, groups] = await Promise.all([
+			Application.find({ eventId })
+				.populate("userId", "userName email profile_image_url")
+				.sort({ createdAt: 1 })
+				.lean(),
+			Group.find({ eventId, isHead: false }).select("name limit").lean(),
+		]);
+
+		const groupsSummary = Array.isArray(groups)
+			? groups.map((g) => ({
+					_id: g._id,
+					name: g.name,
+					limit: g.limit,
+			  }))
+			: [];
 
 		const attendances = applications.map((app: any) => {
 			const isAttended = app.isAttended === true || app.checkIn?.status === "SCANNED";
@@ -269,6 +304,7 @@ export const getEventAttendance = async (req: any, res: any) => {
 				imageUrl: event.imageUrl,
 			},
 			attendances,
+			groups: groupsSummary,
 			stats: {
 				total,
 				present,

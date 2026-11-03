@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import EventOptions from "./EventOptions.jsx";
@@ -122,7 +122,6 @@ const EventSection = ({ event }) => {
 
     return {
       trackName,
-      group,
       groupId,
       limit,
       membersCount,
@@ -391,11 +390,44 @@ const EventSection = ({ event }) => {
     );
   };
 
-  const isCreatorOrHost =
-    user &&
-    (user?._id === event?.userId?._id ||
-      user?._id === event?.userId ||
-      user?.isHost);
+  const currentUserId = user?._id ? String(user._id) : null;
+  const eventCreatorId = event?.userId?._id
+    ? String(event.userId._id)
+    : event?.userId
+    ? String(event.userId)
+    : null;
+
+  // 1. Creator of THIS event or platform super-admin
+  const isEventCreator = Boolean(
+    currentUserId &&
+      eventCreatorId &&
+      (currentUserId === eventCreatorId || user?.role === "admin")
+  );
+
+  // 2. Sub-event Admin or Moderator for THIS specific event
+  const isSubEventModeratorOrAdmin = Boolean(
+    currentUserId &&
+      Array.isArray(subEventGroups) &&
+      subEventGroups.some((g) => {
+        const groupAdminId = g?.admin?._id
+          ? String(g.admin._id)
+          : g?.admin
+          ? String(g.admin)
+          : null;
+        const isAdm = g?.isAdmin === true || (groupAdminId && groupAdminId === currentUserId);
+        const isMod =
+          g?.isModerator === true ||
+          (Array.isArray(g?.moderators) &&
+            g.moderators.some((m) => {
+              const modId = m?._id ? String(m._id) : m ? String(m) : null;
+              return modId && modId === currentUserId;
+            }));
+        return Boolean(isAdm || isMod);
+      })
+  );
+
+  // Show Organizer Controls strictly only for admins and moderators of THIS event
+  const canManageEvent = Boolean(isEventCreator || isSubEventModeratorOrAdmin);
 
   return (
     <div className="w-full text-on-surface font-poppins pb-10">
@@ -411,7 +443,7 @@ const EventSection = ({ event }) => {
             size={18}
           />
         </button>
-        <EventOptions event={event} />
+        <EventOptions event={event} subEventGroups={subEventGroups} />
       </div>
 
       {/* Main Grid Layout */}
@@ -710,29 +742,34 @@ const EventSection = ({ event }) => {
               </div>
             </div>
 
-            {/* Attendance & Organizer Quick link (for host/organizer) */}
-            {isCreatorOrHost && (
-              <div className="pt-2 flex flex-col gap-2">
+            {/* Attendance & Organizer Quick link (for event creator/admin and its moderators) */}
+            {canManageEvent && (
+              <div className="pt-2 flex flex-col gap-2.5">
+                <div className="flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-primary-container">
+                  <span className="material-symbols-outlined text-base">admin_panel_settings</span>
+                  <span>Organizer Controls</span>
+                </div>
+                {!event?.paid && (
+                  <Link
+                    to={`/events/${event?._id}/requests`}
+                    className="w-full text-center bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold py-3 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2 text-sm border border-outline-variant/30 hover:border-outline-variant/60"
+                  >
+                    <span className="material-symbols-outlined text-lg text-indigo-600">group</span>
+                    <span>Manage Join Requests</span>
+                  </Link>
+                )}
                 <Link
                   to={`/events/${event?._id}/attendance`}
-                  className="block w-full text-center bg-primary-container hover:bg-surface-tint text-on-primary font-medium py-3 rounded-xl transition duration-200 shadow-md shadow-primary-container/20"
+                  className="w-full text-center bg-primary-container hover:bg-surface-tint text-on-primary font-semibold py-3 rounded-xl transition duration-200 shadow-md shadow-primary-container/20 flex items-center justify-center gap-2 text-sm"
                 >
-                  Proceed to Attendance
-                </Link>
-                <Link
-                  className="w-full text-center bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold py-2.5 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2 text-sm border border-outline-variant/30"
-                  to={`/events/${event?._id}/attendance`}
-                >
-                  <span className="material-symbols-outlined text-base">
-                    qr_code_scanner
-                  </span>
-                  <span>Gate Attendance &amp; Scanner</span>
+                  <span className="material-symbols-outlined text-lg">qr_code_scanner</span>
+                  <span>Proceed to Attendance</span>
                 </Link>
               </div>
             )}
 
-            {/* Attendee Registration & Multi-Select Application Section */}
-            {!isCreatorOrHost && (
+            {/* Attendee Registration & Multi-Select Application Section (for attendees) */}
+            {!canManageEvent && (
               <div className="pt-2 flex flex-col gap-3 font-poppins">
                 <span className="text-xs uppercase text-on-surface-variant tracking-wider font-bold">
                   Registration &amp; Sub-Events

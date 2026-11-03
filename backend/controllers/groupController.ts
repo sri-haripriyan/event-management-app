@@ -1,3 +1,4 @@
+import Event from "../models/eventModel.js";
 import jwt from "jsonwebtoken";
 import Group from "../models/groupModel.js";
 import JoinRequest from "../models/requestModel.js";
@@ -188,21 +189,71 @@ export const getGroups = async (req, res) => {
 	}
 };
 
-export const approveRequest = async (req, res) => {
-	const { requestId, action } = req.body;
+export const approveRequest = async (req: any, res: any) => {
+	const { requestId, action, status } = req.body;
 
 	try {
+		if (!requestId) {
+			return res.status(400).json({ message: "requestId is required" });
+		}
+
 		const joinRequest = await JoinRequest.findById(requestId).populate("group");
-		if (!joinRequest || joinRequest.status !== "pending") {
-			return res.status(400).json({ message: "Invalid request" });
+		if (!joinRequest) {
+			return res.status(404).json({ message: "Join request not found" });
 		}
 
 		const group = joinRequest.group as any;
+		if (!group) {
+			return res.status(404).json({ message: "Associated sub-event group not found" });
+		}
 
-		if (action === "approve") {
-			// Seat capacity check: prevent exceeding seat capacity
+		// Authorization check: User must be Event creator, group admin, group moderator, or host/admin
+		if (req.user) {
+			const userIdStr = req.user._id?.toString();
+			const groupAdminId = (group.admin?._id || group.admin)?.toString();
+			const isGroupAdmin = groupAdminId ? groupAdminId === userIdStr : false;
+			const isGroupMod = Boolean(
+				group.moderators?.some((m: any) => (m?._id || m)?.toString() === userIdStr)
+			);
+			const isSuperAdmin = req.user.role === "admin";
+
+			let isEventCreator = false;
+			if (!isGroupAdmin && !isGroupMod && !isSuperAdmin && group.eventId) {
+				const event = await Event.findById(group.eventId).select("userId").lean();
+				if (event) {
+					const eventOwnerId = (event.userId as any)?._id?.toString() || event.userId?.toString();
+					isEventCreator = eventOwnerId === userIdStr;
+				}
+			}
+
+			if (groupAdminId || isEventCreator || isSuperAdmin) {
+				if (!isGroupAdmin && !isGroupMod && !isEventCreator && !isSuperAdmin) {
+					return res.status(403).json({
+						message: "Access denied: Only event organizers or moderators can manage join requests",
+					});
+				}
+			}
+		}
+
+		// Normalize target status
+		let targetStatus: "approved" | "rejected" | "pending";
+		const rawAction = (action || status || "").toString().toLowerCase().trim();
+		if (rawAction === "approve" || rawAction === "approved") {
+			targetStatus = "approved";
+		} else if (rawAction === "reject" || rawAction === "rejected") {
+			targetStatus = "rejected";
+		} else if (rawAction === "pending") {
+			targetStatus = "pending";
+		} else {
+			return res.status(400).json({ message: "Invalid action. Must be 'approve', 'reject', or 'pending'." });
+		}
+
+		if (targetStatus === "approved") {
+			// Seat capacity check: prevent exceeding seat capacity (unless user is already a member)
+			const isAlreadyMember = group.members?.some((m: any) => m?.toString() === joinRequest.user?.toString());
 			const currentMembers = (group.members?.length || 0) - (group.moderators?.length || 0);
-			if (group.limit && currentMembers >= group.limit) {
+
+			if (!isAlreadyMember && group.limit && currentMembers >= group.limit) {
 				return res.status(400).json({ message: "Sub-event participant limit reached" });
 			}
 
@@ -217,6 +268,7 @@ export const approveRequest = async (req, res) => {
 					$addToSet: { groups: group._id },
 				}),
 			]);
+
 			const subeventName = group ? group.name : "General Registration";
 			let application = await Application.findOne({
 				eventId: group.eventId,
@@ -232,18 +284,38 @@ export const approveRequest = async (req, res) => {
 				logger.info("Created application for subevent: " + application);
 			}
 			await addEmailToQueue(application._id.toString());
-		} else {
+		} else if (targetStatus === "rejected") {
 			joinRequest.status = "rejected";
 			await Promise.all([
 				joinRequest.save(),
 				Group.findByIdAndUpdate(group._id, {
-					$pull: { requests: joinRequest.user },
+					$pull: { requests: joinRequest.user, members: joinRequest.user },
+				}),
+				User.findByIdAndUpdate(joinRequest.user, {
+					$pull: { groups: group._id },
+				}),
+			]);
+		} else if (targetStatus === "pending") {
+			joinRequest.status = "pending";
+			await Promise.all([
+				joinRequest.save(),
+				Group.findByIdAndUpdate(group._id, {
+					$addToSet: { requests: joinRequest.user },
+					$pull: { members: joinRequest.user },
+				}),
+				User.findByIdAndUpdate(joinRequest.user, {
+					$pull: { groups: group._id },
 				}),
 			]);
 		}
 
-		res.status(200).json({ message: `Join request ${action}ed` });
+		res.status(200).json({
+			message: `Join request status changed to ${targetStatus}`,
+			status: targetStatus,
+			requestId: joinRequest._id,
+		});
 	} catch (err: any) {
+		logger.error("Error processing join request:", err);
 		res.status(500).json({ message: "Error processing join request", error: err.message });
 	}
 };
@@ -347,7 +419,8 @@ export const joinRequest = async (req: any, res: any) => {
 		}
 
 		// Multiple group requests (Batch registration)
-		const groups = await Group.find({ _id: { $in: targetGroupIds } }).select("members requests admin limit isHead name");
+		const groupQuery = Group.find({ _id: { $in: targetGroupIds } });
+		const groups = await (typeof groupQuery?.select === "function" ? groupQuery.select("members requests admin limit isHead name") : groupQuery);
 		if (!groups || groups.length === 0) {
 			return res.status(404).json({ message: "No sub-events found" });
 		}
@@ -511,6 +584,13 @@ export const getGroupByEventId = async (req, res) => {
 				? "already requested"
 				: rawStatus;
 
+			const isAdmin = userId
+				? (group.admin?._id || group.admin)?.toString() === userId
+				: false;
+			const isModerator = userId
+				? Boolean(group.moderators?.some((m: any) => (m?._id || m)?.toString() === userId))
+				: false;
+
 			return {
 				_id: group._id,
 				name: group.name,
@@ -518,6 +598,10 @@ export const getGroupByEventId = async (req, res) => {
 				isMember,
 				limit: group.limit,
 				membersCount: group.members?.length || 0,
+				admin: group.admin,
+				moderators: group.moderators || [],
+				isAdmin,
+				isModerator,
 			};
 		});
 
@@ -621,5 +705,95 @@ export const getUserEventRequestStatus = async (req: any, res: any) => {
 	} catch (error: any) {
 		logger.error("getUserEventRequestStatus error:", error);
 		return res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const getEventJoinRequests = async (req: any, res: any) => {
+	try {
+		const { eventId } = req.params;
+		if (!eventId) {
+			return res.status(400).json({ message: "Event ID is required" });
+		}
+
+		const event = await Event.findById(eventId).populate("userId", "userName email profile_image_url");
+		if (!event) {
+			return res.status(404).json({ message: "Event not found" });
+		}
+
+		if (event.paid) {
+			return res.status(400).json({
+				message: "Join requests are not applicable for paid events",
+			});
+		}
+
+		// Find all sub-event groups for this event
+		const groups = await Group.find({ eventId });
+		const groupIds = groups.map((g) => g._id);
+
+		// Authorization check
+		if (req.user) {
+			const userIdStr = req.user._id?.toString();
+			const isEventCreator =
+				(event.userId as any)?._id?.toString() === userIdStr ||
+				(event.userId as any)?.toString() === userIdStr;
+			const isGroupAdminOrMod = groups.some(
+				(g) =>
+					g.admin?.toString() === userIdStr ||
+					g.moderators?.some((m: any) => m?.toString() === userIdStr)
+			);
+			const isSuperAdmin = req.user.role === "admin";
+
+			if (!isEventCreator && !isGroupAdminOrMod && !isSuperAdmin) {
+				return res.status(403).json({
+					message: "Access denied. Only event admins or moderators can view join requests.",
+				});
+			}
+		}
+
+		// Fetch all join requests for groups in this event
+		const requests = await JoinRequest.find({ group: { $in: groupIds } })
+			.populate("user", "userName email profile_image_url phone")
+			.populate("group", "name limit members moderators admin isHead eventId")
+			.sort({ createdAt: -1 });
+
+		const pendingCount = requests.filter((r) => r.status === "pending").length;
+		const approvedCount = requests.filter((r) => r.status === "approved").length;
+		const rejectedCount = requests.filter((r) => r.status === "rejected").length;
+
+		const groupsSummary = groups.map((g) => ({
+			_id: g._id,
+			name: g.name,
+			limit: g.limit,
+			membersCount: (g.members?.length || 0) - (g.moderators?.length || 0),
+		}));
+
+		return res.status(200).json({
+			success: true,
+			event: {
+				_id: event._id,
+				title: event.title,
+				imageUrl: event.imageUrl,
+				eventDate: event.eventDate,
+				startTime: event.startTime,
+				endTime: event.endTime,
+				paid: event.paid,
+				amount: event.amount,
+				creator: event.userId,
+			},
+			counts: {
+				total: requests.length,
+				pending: pendingCount,
+				approved: approvedCount,
+				rejected: rejectedCount,
+			},
+			groups: groupsSummary,
+			requests,
+		});
+	} catch (error: any) {
+		logger.error("getEventJoinRequests error:", error);
+		return res.status(500).json({
+			message: "Failed to fetch event join requests",
+			error: error.message,
+		});
 	}
 };

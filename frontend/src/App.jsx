@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Spinner from "./components/Spinner";
 import Layout from "./layout/Layout";
@@ -48,6 +48,7 @@ const App = () => {
                 <Route path="/create-events" element={<CreateEvents />} />
                 <Route path="/updateEvent/:eventId" element={<EditEvents />} />
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/events/:eventId/requests" element={<Request />} />
                 <Route path="/request" element={<Request />} />
                 <Route path="/payments/:eventId" element={<PaymentPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

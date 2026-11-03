@@ -6,6 +6,7 @@ import {
   getGroupByEventId,
   getGroupInfo,
   getGroupJoinRequests,
+  getEventJoinRequests,
   getGroups,
   getUserEventRequestStatus,
   getUserRequests,
@@ -26,6 +27,7 @@ router.post("/request", protect, joinRequest);
 router.post("/batch-request", protect, joinRequest);
 router.post("/approve", protect, approveRequest);
 router.get("/r/request", protect, getGroupJoinRequests);
+router.get("/events/:eventId/requests", protect, getEventJoinRequests);
 router.get("/status/:eventId", protect, getUserEventRequestStatus);
 router.get("/user/requests/:eventId?", protect, getUserRequests);
 router.get("/byEvent/:eventId", getGroupByEventId);
