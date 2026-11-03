@@ -20,7 +20,11 @@ const Login = () => {
       setUser(data);
       setuserName("");
       setPassword("");
-      navigate(from, { replace: true });
+      if (!data?.roleType && !data?.district && !data?.phone) {
+        sessionStorage.setItem("askPersonalData", "true");
+        sessionStorage.removeItem("personalDataModalDismissed");
+      }
+      navigate(from, { replace: true, state: { fromLogin: true } });
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || error.message);

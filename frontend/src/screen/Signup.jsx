@@ -5,6 +5,7 @@ import { SignupData } from "../services/api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import Spinner from "../components/Spinner.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
+import PersonalDataModal from "../components/PersonalDataModal.jsx";
 import { toast } from "react-toastify";
 
 const Signup = () => {
@@ -24,7 +25,10 @@ const Signup = () => {
       setUser(data);
       setuserName("");
       setPassword("");
-      navigate(from, { replace: true });
+      // Flag for events page to open personal data modal after 2 seconds
+      sessionStorage.setItem("askPersonalData", "true");
+      sessionStorage.removeItem("personalDataModalDismissed");
+      navigate(from, { replace: true, state: { newlyRegistered: true } });
     },
     onError: (error) => {
       toast.error(error.response?.data?.error || error?.message);
@@ -138,6 +142,8 @@ const Signup = () => {
           </div>
         </div>
       </div>
+
+
 
       {/* Footer Block */}
       <footer className="w-full border-t border-outline-variant/20 py-8 px-8 sm:px-12 z-10 bg-surface">

@@ -448,7 +448,7 @@ const PaymentPage = () => {
                           <div className="flex items-center gap-2 mt-1 text-xs text-on-surface-variant">
                             {group.limit && (
                               <span className="text-[11px] bg-surface-container px-2 py-0.5 rounded-md">
-                                Capacity: {group.members?.length || 0}/{group.limit}
+                                Capacity: {summaryItem?.membersCount ?? group.membersCount ?? 0}/{group.limit}
                               </span>
                             )}
                             {isFull && (

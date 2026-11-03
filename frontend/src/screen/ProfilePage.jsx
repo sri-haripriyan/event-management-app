@@ -6,6 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import { getPanelData, uploadImage, signout } from "../services/api";
 import ImageCropModal from "../components/ImageCropModal";
 import TicketQRModal from "../components/TicketQRModal";
+import PersonalDataModal from "../components/PersonalDataModal";
 import Spinner from "../components/Spinner";
 import { getTicketStatus } from "../utils/ticketUtils";
 
@@ -37,6 +38,9 @@ const ProfilePage = () => {
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImageSrc, setSelectedImageSrc] = useState(null);
   const [selectedFileName, setSelectedFileName] = useState("avatar.jpg");
+
+  // Personal Information Modal State
+  const [personalModalOpen, setPersonalModalOpen] = useState(false);
 
   // Fetch Panel Data
   const {
@@ -297,9 +301,32 @@ const ProfilePage = () => {
                   <p className="font-body-md text-body-md text-on-surface-variant font-medium">
                     @{currentUser?.userName ? currentUser.userName.toLowerCase() : "alexrivera.design"}
                   </p>
-                  <div className="inline-flex items-center gap-1 mt-1 text-outline font-body-sm text-body-sm">
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span>San Francisco, CA</span>
+                  {/* Location & Role Badges */}
+                  <div className="flex flex-col items-center gap-1 mt-1">
+                    <div className="inline-flex items-center gap-1 text-on-surface-variant font-body-sm text-xs">
+                      <span className="material-symbols-outlined text-sm text-primary-container">location_on</span>
+                      <span>
+                        {currentUser?.district || currentUser?.state
+                          ? `${currentUser.district ? currentUser.district + ", " : ""}${currentUser.state || ""}`
+                          : "Location not set"}
+                      </span>
+                    </div>
+
+                    {currentUser?.roleType && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-container/15 text-primary-container text-[11px] font-semibold mt-0.5">
+                        <span className="material-symbols-outlined text-xs">
+                          {currentUser.roleType === "Student"
+                            ? "school"
+                            : currentUser.roleType === "Lecturer"
+                              ? "co_present"
+                              : "work"}
+                        </span>
+                        <span>
+                          {currentUser.roleType}
+                          {currentUser.college ? ` • ${currentUser.college}` : ""}
+                        </span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -342,7 +369,7 @@ const ProfilePage = () => {
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="mt-space-lg w-full flex items-center justify-center gap-space-xs py-2.5 px-4 rounded-lg bg-surface-container-low hover:bg-error-container/20 text-on-surface-variant hover:text-error font-label-md text-label-md transition-all active:scale-[0.98] border border-outline-variant/20 disabled:opacity-50"
+                  className="mt-space-lg w-full flex items-center justify-center gap-space-xs py-2.5 px-4 rounded-lg bg-red-50 hover:text-red-800 text-red-600 hover:text-white font-label-md text-label-md transition-all duration-200 active:scale-[0.98] border border-red-200 hover:border-red-600 hover:shadow-sm hover:shadow-red-500/20 disabled:opacity-50"
                   type="button"
                 >
                   {isLoggingOut ? (
@@ -375,14 +402,21 @@ const ProfilePage = () => {
                 <nav className="flex flex-col gap-1">
                   <button
                     type="button"
-                    onClick={() => toast.info("Personal details are synchronized.")}
+                    onClick={() => setPersonalModalOpen(true)}
                     className="group flex items-center justify-between p-2.5 rounded-lg hover:bg-surface-container-low text-on-surface transition-colors w-full text-left"
                   >
                     <div className="flex items-center gap-space-sm">
                       <span className="material-symbols-outlined text-outline group-hover:text-primary-container transition-colors text-xl">
                         person
                       </span>
-                      <span className="font-body-md text-body-md font-medium">Personal Information</span>
+                      <div className="flex flex-col">
+                        <span className="font-body-md text-body-md font-medium">Personal Information</span>
+                        <span className="text-[11px] text-on-surface-variant font-normal">
+                          {currentUser?.roleType || currentUser?.state || currentUser?.phone
+                            ? "Edit role, college, location & contact"
+                            : "Set up role, college, location & contact"}
+                        </span>
+                      </div>
                     </div>
                     <span className="material-symbols-outlined text-outline group-hover:translate-x-0.5 transition-transform text-lg">
                       chevron_right
@@ -889,6 +923,17 @@ const ProfilePage = () => {
           </div>
         </div>
       </footer>
+
+      {/* Personal Details Modal */}
+      <PersonalDataModal
+        isOpen={personalModalOpen}
+        initialData={currentUser}
+        onClose={() => setPersonalModalOpen(false)}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["profile-panel", user?._id] });
+          refetch();
+        }}
+      />
 
       {/* Avatar Image Crop & Resize Modal */}
       <ImageCropModal

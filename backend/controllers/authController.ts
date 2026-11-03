@@ -32,6 +32,12 @@ export const signUp = async (req, res) => {
         userName,
         email,
         profile_image_url: user.profile_image_url,
+        phone: (user as any).phone || "",
+        roleType: (user as any).roleType || "",
+        college: (user as any).college || "",
+        state: (user as any).state || "",
+        district: (user as any).district || "",
+        heardFrom: (user as any).heardFrom || "",
       });
     } else {
       return res.status(400).json({ error: "Invalid user data" });
@@ -59,6 +65,12 @@ export const login = async (req, res) => {
         eventsApplied: userExists.eventsApplied,
         profile_image_url: userExists.profile_image_url,
         isHost,
+        phone: (userExists as any).phone || "",
+        roleType: (userExists as any).roleType || "",
+        college: (userExists as any).college || "",
+        state: (userExists as any).state || "",
+        district: (userExists as any).district || "",
+        heardFrom: (userExists as any).heardFrom || "",
       });
     } else {
       return res.status(401).json({ error: "Invalid username or password" });

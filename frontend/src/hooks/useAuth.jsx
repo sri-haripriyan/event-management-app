@@ -36,7 +36,13 @@ export const AuthProvider = ({ children }) => {
         if (
           prev.profile_image_url !== panelData.user.profile_image_url ||
           prev.userName !== panelData.user.userName ||
-          prev.email !== panelData.user.email
+          prev.email !== panelData.user.email ||
+          prev.roleType !== panelData.user.roleType ||
+          prev.college !== panelData.user.college ||
+          prev.state !== panelData.user.state ||
+          prev.district !== panelData.user.district ||
+          prev.heardFrom !== panelData.user.heardFrom ||
+          prev.phone !== panelData.user.phone
         ) {
           return {
             ...prev,

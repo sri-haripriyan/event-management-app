@@ -407,7 +407,7 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
       JoinRequest.create = originalJoinRequestCreate;
       Group.findByIdAndUpdate = originalGroupFindByIdAndUpdate;
     }
-  });
+  });
 
   test("11. approveRequest can transition state from approved back to pending", async () => {
     const originalFindById = JoinRequest.findById;
@@ -804,6 +804,108 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
       assert.match(res.jsonData.message, /not applicable for paid events/i);
     } finally {
       Event.findById = origEventFindById;
+    }
+  });
+
+  test("18. getGroupByEventId and approveRequest exclude admin and moderators from subevent capacity / seats count", async () => {
+    const origGroupFind = Group.find;
+    const origJoinRequestFind = JoinRequest.find;
+    const origJoinRequestFindById = JoinRequest.findById;
+    const origGroupFindByIdAndUpdate = Group.findByIdAndUpdate;
+    const origUserFindByIdAndUpdate = User.findByIdAndUpdate;
+    const origAppFindOne = Application.findOne;
+    const origAppCreate = Application.create;
+
+    const mockAdmin = new mongoose.Types.ObjectId();
+    const mockMod = new mongoose.Types.ObjectId();
+    const mockAttendee1 = new mongoose.Types.ObjectId();
+    const mockAttendee2 = new mongoose.Types.ObjectId();
+    const mockNewApplicant = new mongoose.Types.ObjectId();
+
+    // Group with 1 admin, 1 moderator, and 2 regular attendees in members array (total 4 in members)
+    const mockSubEvent = {
+      _id: mockGroupId1,
+      name: "AI & ML Workshop",
+      eventId: mockEventId,
+      admin: mockAdmin,
+      moderators: [mockMod],
+      members: [mockAdmin, mockMod, mockAttendee1, mockAttendee2],
+      isHead: false,
+      limit: 3, // capacity limit is 3 attendees
+    };
+
+    (Group as any).find = () => Promise.resolve([mockSubEvent]);
+    (JoinRequest as any).find = () => ({
+      lean: () => Promise.resolve([]),
+    });
+
+    try {
+      // 1. Verify getGroupByEventId returns membersCount = 2 (NOT 4)
+      const { req: reqGroup, res: resGroup } = createMockReqRes({}, { eventId: mockEventId });
+      await getGroupByEventId(reqGroup, resGroup);
+
+      assert.equal(resGroup.statusCode, 200);
+      assert.equal(resGroup.jsonData.length, 1);
+      assert.equal(resGroup.jsonData[0].membersCount, 2); // strictly excludes admin and mod
+      assert.equal(resGroup.jsonData[0].limit, 3);
+
+      // 2. Verify approveRequest allows approving a 3rd attendee (current attendees = 2 < limit = 3)
+      (JoinRequest as any).findById = () => ({
+        populate: () =>
+          Promise.resolve({
+            _id: new mongoose.Types.ObjectId(),
+            user: mockNewApplicant,
+            status: "pending",
+            save: () => Promise.resolve(),
+            group: mockSubEvent,
+          }),
+      });
+      (Group as any).findByIdAndUpdate = () => Promise.resolve();
+      (User as any).findByIdAndUpdate = () => Promise.resolve();
+      (Application as any).findOne = () => Promise.resolve(null);
+      (Application as any).create = () => Promise.resolve({ _id: "new-app-id" });
+
+      const { req: reqApprove, res: resApprove } = createMockReqRes(
+        { requestId: "mock-req-id", action: "approve" },
+        {},
+        { _id: mockAdmin }
+      );
+      await approveRequest(reqApprove, resApprove);
+      assert.equal(resApprove.statusCode, 200);
+      assert.match(resApprove.jsonData.message, /approved/i);
+
+      // 3. Verify approveRequest blocks when attendee limit is reached (3 attendees >= limit = 3)
+      const fullGroup = {
+        ...mockSubEvent,
+        members: [mockAdmin, mockMod, mockAttendee1, mockAttendee2, mockNewApplicant],
+      };
+      (JoinRequest as any).findById = () => ({
+        populate: () =>
+          Promise.resolve({
+            _id: new mongoose.Types.ObjectId(),
+            user: new mongoose.Types.ObjectId(),
+            status: "pending",
+            save: () => Promise.resolve(),
+            group: fullGroup,
+          }),
+      });
+
+      const { req: reqApproveFull, res: resApproveFull } = createMockReqRes(
+        { requestId: "mock-req-id-2", action: "approve" },
+        {},
+        { _id: mockAdmin }
+      );
+      await approveRequest(reqApproveFull, resApproveFull);
+      assert.equal(resApproveFull.statusCode, 400);
+      assert.match(resApproveFull.jsonData.message, /limit reached/i);
+    } finally {
+      Group.find = origGroupFind;
+      JoinRequest.find = origJoinRequestFind;
+      JoinRequest.findById = origJoinRequestFindById;
+      Group.findByIdAndUpdate = origGroupFindByIdAndUpdate;
+      User.findByIdAndUpdate = origUserFindByIdAndUpdate;
+      Application.findOne = origAppFindOne;
+      Application.create = origAppCreate;
     }
   });
 });

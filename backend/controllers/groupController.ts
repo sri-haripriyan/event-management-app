@@ -249,9 +249,17 @@ export const approveRequest = async (req: any, res: any) => {
 		}
 
 		if (targetStatus === "approved") {
-			// Seat capacity check: prevent exceeding seat capacity (unless user is already a member)
+			// Seat capacity check: prevent exceeding seat capacity (excluding admin and moderators)
 			const isAlreadyMember = group.members?.some((m: any) => m?.toString() === joinRequest.user?.toString());
-			const currentMembers = (group.members?.length || 0) - (group.moderators?.length || 0);
+			const adminId = (group.admin?._id || group.admin)?.toString();
+			const modIdSet = new Set(
+				(group.moderators || []).map((m: any) => (m?._id || m)?.toString())
+			);
+			const attendeeMembers = (group.members || []).filter((m: any) => {
+				const mId = (m?._id || m)?.toString();
+				return mId && mId !== adminId && !modIdSet.has(mId);
+			});
+			const currentMembers = attendeeMembers.length;
 
 			if (!isAlreadyMember && group.limit && currentMembers >= group.limit) {
 				return res.status(400).json({ message: "Sub-event participant limit reached" });
@@ -574,8 +582,19 @@ export const getGroupByEventId = async (req, res) => {
 		}
 
 		const result = filteredGroups.map((group) => {
+			const adminId = (group.admin?._id || group.admin)?.toString();
+			const modIdSet = new Set(
+				(group.moderators || []).map((m: any) => (m?._id || m)?.toString())
+			);
+			// Total attendee seats count excludes admin and moderators
+			const attendeeMembers = (group.members || []).filter((m: any) => {
+				const mId = (m?._id || m)?.toString();
+				return mId && mId !== adminId && !modIdSet.has(mId);
+			});
+			const membersCount = attendeeMembers.length;
+
 			const isMember = userId
-				? group.members.some((m: any) => m.toString() === userId)
+				? attendeeMembers.some((m: any) => (m?._id || m)?.toString() === userId)
 				: false;
 			const rawStatus = userId ? requestMap.get(group._id.toString()) || null : null;
 			const requestStatus = isMember
@@ -585,10 +604,10 @@ export const getGroupByEventId = async (req, res) => {
 				: rawStatus;
 
 			const isAdmin = userId
-				? (group.admin?._id || group.admin)?.toString() === userId
+				? adminId === userId
 				: false;
 			const isModerator = userId
-				? Boolean(group.moderators?.some((m: any) => (m?._id || m)?.toString() === userId))
+				? modIdSet.has(userId)
 				: false;
 
 			return {
@@ -597,7 +616,7 @@ export const getGroupByEventId = async (req, res) => {
 				requestStatus, // "already requested" | "approved" | "rejected" | null
 				isMember,
 				limit: group.limit,
-				membersCount: group.members?.length || 0,
+				membersCount,
 				admin: group.admin,
 				moderators: group.moderators || [],
 				isAdmin,
@@ -644,7 +663,7 @@ export const getUserEventRequestStatus = async (req: any, res: any) => {
 		}
 
 		// Find all non-head sub-event groups for this event
-		const groups = await Group.find({ eventId, isHead: false }).select("name members requests limit");
+		const groups = await Group.find({ eventId, isHead: false }).select("name members requests limit admin moderators");
 		const groupIds = groups.map((g) => g._id);
 
 		// Find all join requests by this user for these sub-events
@@ -659,10 +678,13 @@ export const getUserEventRequestStatus = async (req: any, res: any) => {
 		});
 
 		const subEvents = groups.map((group) => {
-			const isMember = group.members.some(
-				(m: any) => m.toString() === userId.toString()
-			);
-			const isRequestedInGroup = group.requests.some(
+			const adminId = (group.admin?._id || group.admin)?.toString();
+			const modSet = new Set((group.moderators || []).map((m: any) => (m?._id || m)?.toString()));
+			const isAttendeeMember = (group.members || []).some((m: any) => {
+				const mId = (m?._id || m)?.toString();
+				return mId === userId.toString() && mId !== adminId && !modSet.has(mId);
+			});
+			const isRequestedInGroup = (group.requests || []).some(
 				(r: any) => r.toString() === userId.toString()
 			);
 			const rawStatus = requestMap.get(group._id.toString()) || null;
@@ -670,7 +692,7 @@ export const getUserEventRequestStatus = async (req: any, res: any) => {
 			let status = "none";
 			let statusLabel = "Join";
 
-			if (isMember || rawStatus === "approved") {
+			if (isAttendeeMember || rawStatus === "approved") {
 				status = "approved";
 				statusLabel = "Approved";
 			} else if (rawStatus === "pending" || isRequestedInGroup) {
@@ -687,7 +709,7 @@ export const getUserEventRequestStatus = async (req: any, res: any) => {
 				status, // "already requested" | "approved" | "rejected" | "none"
 				statusLabel,
 				isRequested: status === "already requested",
-				isMember,
+				isMember: isAttendeeMember,
 				rawStatus,
 			};
 		});
@@ -760,12 +782,23 @@ export const getEventJoinRequests = async (req: any, res: any) => {
 		const approvedCount = requests.filter((r) => r.status === "approved").length;
 		const rejectedCount = requests.filter((r) => r.status === "rejected").length;
 
-		const groupsSummary = groups.map((g) => ({
-			_id: g._id,
-			name: g.name,
-			limit: g.limit,
-			membersCount: (g.members?.length || 0) - (g.moderators?.length || 0),
-		}));
+		const groupsSummary = groups.map((g) => {
+			const adminId = (g.admin?._id || g.admin)?.toString();
+			const modIdSet = new Set(
+				(g.moderators || []).map((m: any) => (m?._id || m)?.toString())
+			);
+			const attendeeMembersCount = (g.members || []).filter((m: any) => {
+				const mId = (m?._id || m)?.toString();
+				return mId && mId !== adminId && !modIdSet.has(mId);
+			}).length;
+
+			return {
+				_id: g._id,
+				name: g.name,
+				limit: g.limit,
+				membersCount: attendeeMembersCount,
+			};
+		});
 
 		return res.status(200).json({
 			success: true,

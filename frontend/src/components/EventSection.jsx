@@ -67,7 +67,15 @@ const EventSection = ({ event }) => {
     const group = getGroupForTrack(track);
     const groupId = group?._id;
     const limit = (typeof track === "object" && track?.limit) || group?.limit || null;
-    const membersCount = group?.membersCount || 0;
+    const adminId = (group?.admin?._id || group?.admin)?.toString();
+    const modIdSet = new Set((group?.moderators || []).map((m) => (m?._id || m)?.toString()));
+    const fallbackAttendeeCount = Array.isArray(group?.members)
+      ? group.members.filter((m) => {
+          const mId = (m?._id || m)?.toString();
+          return mId && mId !== adminId && !modIdSet.has(mId);
+        }).length
+      : 0;
+    const membersCount = group?.membersCount !== undefined ? group.membersCount : fallbackAttendeeCount;
 
     let status = "none";
     let statusLabel = "Available";

@@ -93,7 +93,18 @@ export const uploadProfilePhoto = async (req: any, res: any) => {
 
 export const updateProfile = async (req: any, res: any) => {
 	try {
-		const { userName, email, password, confirmPassword } = req.body;
+		const {
+			userName,
+			email,
+			password,
+			confirmPassword,
+			phone,
+			roleType,
+			college,
+			state,
+			district,
+			heardFrom,
+		} = req.body;
 		let updateFields: any = {};
 		if (userName && userName !== req.user.userName) {
 			if (await User.findOne({ userName }))
@@ -114,6 +125,13 @@ export const updateProfile = async (req: any, res: any) => {
 			updateFields.password = await bcrypt.hash(password, salt);
 		}
 
+		if (phone !== undefined) updateFields.phone = phone;
+		if (roleType !== undefined) updateFields.roleType = roleType;
+		if (college !== undefined) updateFields.college = college;
+		if (state !== undefined) updateFields.state = state;
+		if (district !== undefined) updateFields.district = district;
+		if (heardFrom !== undefined) updateFields.heardFrom = heardFrom;
+
 		const updatedUser = await User.findByIdAndUpdate(req.user._id, updateFields, {
 			new: true,
 			runValidators: true,
@@ -125,6 +143,12 @@ export const updateProfile = async (req: any, res: any) => {
 				userName: updatedUser.userName,
 				email: updatedUser.email,
 				profile_image_url: updatedUser.profile_image_url,
+				phone: (updatedUser as any).phone || "",
+				roleType: (updatedUser as any).roleType || "",
+				college: (updatedUser as any).college || "",
+				state: (updatedUser as any).state || "",
+				district: (updatedUser as any).district || "",
+				heardFrom: (updatedUser as any).heardFrom || "",
 			},
 			message: "Profile updated successfully",
 		});
@@ -322,6 +346,12 @@ export const getPanelData = async (req: any, res: any) => {
 				email: user.email,
 				profile_image_url: user.profile_image_url,
 				isHost: user.isHost,
+				phone: (user as any).phone || "",
+				roleType: (user as any).roleType || "",
+				college: (user as any).college || "",
+				state: (user as any).state || "",
+				district: (user as any).district || "",
+				heardFrom: (user as any).heardFrom || "",
 			},
 			eventsCreated: eventsCreated.length,
 			eventsParticipated: participatedEvents.length,

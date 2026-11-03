@@ -581,7 +581,11 @@ const Request = () => {
                               </span>
                               {group?.limit && (
                                 <span className="text-[10px] text-on-surface-variant">
-                                  Capacity: {group.members?.length || 0}/{group.limit}
+                                  Capacity: {
+                                    groupsData?.groups?.find((g) => (g?._id || g)?.toString() === (group?._id || group)?.toString())?.membersCount ??
+                                    group?.membersCount ??
+                                    0
+                                  }/{group.limit}
                                 </span>
                               )}
                             </div>

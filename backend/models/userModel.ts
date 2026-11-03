@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     isHost: { type: Boolean },
+    phone: { type: String, default: "" },
+    roleType: { type: String, default: "" },
+    college: { type: String, default: "" },
+    state: { type: String, default: "" },
+    district: { type: String, default: "" },
+    heardFrom: { type: String, default: "" },
   },
   { timestamps: true }
 );

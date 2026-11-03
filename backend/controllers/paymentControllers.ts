@@ -64,10 +64,18 @@ export const getPaymentSummary = async (req: any, res: any) => {
 		const isPaidEvent = Boolean(event.paid);
 
 		const selectedItems = groups.map((grp: any) => {
-			const memberCount = (grp.members?.length || 0) - (grp.moderators?.length || 0);
+			const adminId = (grp.admin?._id || grp.admin)?.toString();
+			const modIdSet = new Set(
+				(grp.moderators || []).map((m: any) => (m?._id || m)?.toString())
+			);
+			const attendeeMembers = (grp.members || []).filter((m: any) => {
+				const mId = (m?._id || m)?.toString();
+				return mId && mId !== adminId && !modIdSet.has(mId);
+			});
+			const memberCount = attendeeMembers.length;
 			const isLimitReached = grp.limit ? memberCount >= grp.limit : false;
 			const isAlreadyPaid = paidGroupIds.includes(grp._id.toString());
-			const isMember = userId && grp.members?.some((m: any) => m?.toString() === userId.toString());
+			const isMember = userId && attendeeMembers.some((m: any) => (m?._id || m)?.toString() === userId.toString());
 
 			return {
 				_id: grp._id,
@@ -133,9 +141,17 @@ export const createOrder = async (req: any, res: any) => {
 			return res.status(404).json({ message: "Selected sub-events not found", error: "Not found" });
 		}
 
-		// Check participant limits for each group
+		// Check participant limits for each group (excluding admin and moderators)
 		for (const group of groups) {
-			const memberCount = (group.members?.length || 0) - (group.moderators?.length || 0);
+			const adminId = (group.admin?._id || group.admin)?.toString();
+			const modIdSet = new Set(
+				(group.moderators || []).map((m: any) => (m?._id || m)?.toString())
+			);
+			const attendeeMembers = (group.members || []).filter((m: any) => {
+				const mId = (m?._id || m)?.toString();
+				return mId && mId !== adminId && !modIdSet.has(mId);
+			});
+			const memberCount = attendeeMembers.length;
 			if (group.limit && memberCount + 1 > group.limit) {
 				return res.status(400).json({
 					message: `Participant limit reached for "${group.name}"!`,
