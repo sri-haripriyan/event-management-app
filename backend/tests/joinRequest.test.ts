@@ -12,6 +12,8 @@ import {
   getGroupByEventId,
   getUserEventRequestStatus,
   getEventJoinRequests,
+  addModerator,
+  removeModerator,
 } from "../controllers/groupController.js";
 import { getEventAttendance } from "../controllers/ticketController.js";
 
@@ -906,6 +908,265 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
       User.findByIdAndUpdate = origUserFindByIdAndUpdate;
       Application.findOne = origAppFindOne;
       Application.create = origAppCreate;
+    }
+  });
+  test("19. addModerator returns 404 if email does not belong to any signed up user", async () => {
+    const origGroupFindById = Group.findById;
+    const origUserFindOne = User.findOne;
+
+    const mockAdminId = new mongoose.Types.ObjectId();
+    const mockGroupId = new mongoose.Types.ObjectId();
+    (Group as any).findById = () =>
+      Promise.resolve({
+        _id: mockGroupId,
+        admin: mockAdminId,
+        eventId: new mongoose.Types.ObjectId(),
+        moderators: [],
+      });
+    (User as any).findOne = () => Promise.resolve(null);
+
+    try {
+      const { req, res } = createMockReqRes(
+        { groupId: mockGroupId.toString(), email: "notfound@example.com" },
+        {},
+        { _id: mockAdminId }
+      );
+      await addModerator(req, res);
+      assert.equal(res.statusCode, 404);
+      assert.match(res.jsonData.message, /no user found with this email/i);
+    } finally {
+      Group.findById = origGroupFindById;
+      User.findOne = origUserFindOne;
+    }
+  });
+
+  test("20. addModerator rejects if user is an admin for this event", async () => {
+    const origGroupFindById = Group.findById;
+    const origUserFindOne = User.findOne;
+    const origEventFindById = Event.findById;
+
+    const mockAdminId = new mongoose.Types.ObjectId();
+    const mockGroupId = new mongoose.Types.ObjectId();
+    const mockEventId = new mongoose.Types.ObjectId();
+
+    (Group as any).findById = () =>
+      Promise.resolve({
+        _id: mockGroupId,
+        admin: mockAdminId,
+        eventId: mockEventId,
+        moderators: [],
+      });
+    (User as any).findOne = () =>
+      Promise.resolve({
+        _id: mockAdminId,
+        email: "admin@example.com",
+      });
+    (Event as any).findById = () =>
+      Promise.resolve({
+        _id: mockEventId,
+        userId: mockAdminId,
+      });
+
+    try {
+      const { req, res } = createMockReqRes(
+        { groupId: mockGroupId.toString(), email: "admin@example.com" },
+        {},
+        { _id: mockAdminId }
+      );
+      await addModerator(req, res);
+      assert.equal(res.statusCode, 400);
+      assert.match(res.jsonData.message, /administrator for this event/i);
+    } finally {
+      Group.findById = origGroupFindById;
+      User.findOne = origUserFindOne;
+      Event.findById = origEventFindById;
+    }
+  });
+
+  test("21. addModerator rejects if user is registered for any event", async () => {
+    const origGroupFindById = Group.findById;
+    const origUserFindOne = User.findOne;
+    const origEventFindById = Event.findById;
+    const origAppFindOne = Application.findOne;
+    const origJoinRequestFindOne = JoinRequest.findOne;
+
+    const mockAdminId = new mongoose.Types.ObjectId();
+    const mockUserId = new mongoose.Types.ObjectId();
+    const mockGroupId = new mongoose.Types.ObjectId();
+    const mockEventId = new mongoose.Types.ObjectId();
+
+    (Group as any).findById = () =>
+      Promise.resolve({
+        _id: mockGroupId,
+        admin: mockAdminId,
+        eventId: mockEventId,
+        moderators: [],
+      });
+    (User as any).findOne = () =>
+      Promise.resolve({
+        _id: mockUserId,
+        email: "attendee@example.com",
+      });
+    (Event as any).findById = () =>
+      Promise.resolve({
+        _id: mockEventId,
+        userId: mockAdminId,
+      });
+    (Application as any).findOne = () =>
+      Promise.resolve({ _id: new mongoose.Types.ObjectId(), userId: mockUserId });
+    (JoinRequest as any).findOne = () => Promise.resolve(null);
+
+    try {
+      const { req, res } = createMockReqRes(
+        { groupId: mockGroupId.toString(), email: "attendee@example.com" },
+        {},
+        { _id: mockAdminId }
+      );
+      await addModerator(req, res);
+      assert.equal(res.statusCode, 400);
+      assert.match(res.jsonData.message, /registered for an event/i);
+    } finally {
+      Group.findById = origGroupFindById;
+      User.findOne = origUserFindOne;
+      Event.findById = origEventFindById;
+      Application.findOne = origAppFindOne;
+      JoinRequest.findOne = origJoinRequestFindOne;
+    }
+  });
+
+  test("22. addModerator rejects if user is already a moderator for another event", async () => {
+    const origGroupFindById = Group.findById;
+    const origUserFindOne = User.findOne;
+    const origEventFindById = Event.findById;
+    const origAppFindOne = Application.findOne;
+    const origJoinRequestFindOne = JoinRequest.findOne;
+    const origGroupFindOne = Group.findOne;
+
+    const mockAdminId = new mongoose.Types.ObjectId();
+    const mockUserId = new mongoose.Types.ObjectId();
+    const mockGroupId = new mongoose.Types.ObjectId();
+    const mockEventId = new mongoose.Types.ObjectId();
+
+    (Group as any).findById = () =>
+      Promise.resolve({
+        _id: mockGroupId,
+        admin: mockAdminId,
+        eventId: mockEventId,
+        moderators: [],
+      });
+    (User as any).findOne = () =>
+      Promise.resolve({
+        _id: mockUserId,
+        email: "mod@example.com",
+      });
+    (Event as any).findById = () =>
+      Promise.resolve({
+        _id: mockEventId,
+        userId: mockAdminId,
+      });
+    (Application as any).findOne = () => Promise.resolve(null);
+    (JoinRequest as any).findOne = () => Promise.resolve(null);
+    (Group as any).findOne = (query: any) => {
+      if (query?.eventId?.$ne) {
+        // simulating user is already moderator for another event
+        return Promise.resolve({ _id: new mongoose.Types.ObjectId(), eventId: "other-event" });
+      }
+      return Promise.resolve(null);
+    };
+
+    try {
+      const { req, res } = createMockReqRes(
+        { groupId: mockGroupId.toString(), email: "mod@example.com" },
+        {},
+        { _id: mockAdminId }
+      );
+      await addModerator(req, res);
+      assert.equal(res.statusCode, 400);
+      assert.match(res.jsonData.message, /cannot be a moderator for two different events/i);
+    } finally {
+      Group.findById = origGroupFindById;
+      User.findOne = origUserFindOne;
+      Event.findById = origEventFindById;
+      Application.findOne = origAppFindOne;
+      JoinRequest.findOne = origJoinRequestFindOne;
+      Group.findOne = origGroupFindOne;
+    }
+  });
+
+  test("23. addModerator successfully adds eligible user and removeModerator removes user", async () => {
+    const origGroupFindById = Group.findById;
+    const origUserFindOne = User.findOne;
+    const origEventFindById = Event.findById;
+    const origAppFindOne = Application.findOne;
+    const origJoinRequestFindOne = JoinRequest.findOne;
+    const origGroupFindOne = Group.findOne;
+    const origGroupUpdateOne = Group.updateOne;
+
+    const mockAdminId = new mongoose.Types.ObjectId();
+    const mockUserId = new mongoose.Types.ObjectId();
+    const mockGroupId = new mongoose.Types.ObjectId();
+    const mockEventId = new mongoose.Types.ObjectId();
+
+    let updatedModGroup = false;
+    let removedMod = false;
+
+    (Group as any).findById = () =>
+      Promise.resolve({
+        _id: mockGroupId,
+        admin: mockAdminId,
+        eventId: mockEventId,
+        moderators: [],
+      });
+    (User as any).findOne = () =>
+      Promise.resolve({
+        _id: mockUserId,
+        userName: "Eligible User",
+        email: "eligible@example.com",
+      });
+    (Event as any).findById = () =>
+      Promise.resolve({
+        _id: mockEventId,
+        userId: mockAdminId,
+      });
+    (Application as any).findOne = () => Promise.resolve(null);
+    (JoinRequest as any).findOne = () => Promise.resolve(null);
+    (Group as any).findOne = () => Promise.resolve(null);
+    (Group as any).updateOne = (query: any, update: any) => {
+      if (update?.$addToSet?.moderators) updatedModGroup = true;
+      if (update?.$pull?.moderators) removedMod = true;
+      return Promise.resolve({ modifiedCount: 1 });
+    };
+
+    try {
+      // 1. Add Moderator
+      const { req, res } = createMockReqRes(
+        { groupId: mockGroupId.toString(), email: "eligible@example.com" },
+        {},
+        { _id: mockAdminId }
+      );
+      await addModerator(req, res);
+      assert.equal(res.statusCode, 200);
+      assert.equal(updatedModGroup, true);
+      assert.match(res.jsonData.message, /moderator added successfully/i);
+
+      // 2. Remove Moderator
+      const { req: reqRem, res: resRem } = createMockReqRes(
+        { groupId: mockGroupId.toString(), moderatorId: mockUserId.toString() },
+        {},
+        { _id: mockAdminId }
+      );
+      await removeModerator(reqRem, resRem);
+      assert.equal(resRem.statusCode, 200);
+      assert.equal(removedMod, true);
+      assert.match(resRem.jsonData.message, /moderator removed successfully/i);
+    } finally {
+      Group.findById = origGroupFindById;
+      User.findOne = origUserFindOne;
+      Event.findById = origEventFindById;
+      Application.findOne = origAppFindOne;
+      JoinRequest.findOne = origJoinRequestFindOne;
+      Group.findOne = origGroupFindOne;
+      Group.updateOne = origGroupUpdateOne;
     }
   });
 });

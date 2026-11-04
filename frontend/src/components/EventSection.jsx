@@ -451,7 +451,19 @@ const EventSection = ({ event }) => {
             size={18}
           />
         </button>
-        <EventOptions event={event} subEventGroups={subEventGroups} />
+        <div className="flex items-center gap-3">
+          {canManageEvent && (
+            <Link
+              to={`/events/${event?._id}/manage`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 hover:border-primary-container text-on-surface hover:text-primary-container text-xs font-semibold shadow-sm transition active:scale-95"
+              title="Manage event and moderators"
+            >
+              <span className="material-symbols-outlined text-base text-primary-container">settings</span>
+              <span>Manage</span>
+            </Link>
+          )}
+          <EventOptions event={event} subEventGroups={subEventGroups} />
+        </div>
       </div>
 
       {/* Main Grid Layout */}
@@ -757,6 +769,16 @@ const EventSection = ({ event }) => {
                   <span className="material-symbols-outlined text-base">admin_panel_settings</span>
                   <span>Organizer Controls</span>
                 </div>
+
+                {/* Manage Event Button with settings icon */}
+                <Link
+                  to={`/events/${event?._id}/manage`}
+                  className="w-full text-center bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold py-3 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2 text-sm border border-outline-variant/30 hover:border-outline-variant/60"
+                >
+                  <span className="material-symbols-outlined text-lg text-primary-container">settings</span>
+                  <span>Manage</span>
+                </Link>
+
                 {!event?.paid && (
                   <Link
                     to={`/events/${event?._id}/requests`}

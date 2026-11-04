@@ -37,27 +37,82 @@ export const createGroup = async (req, res) => {
 	}
 };
 
-export const addModerator = async (req, res) => {
+export const addModerator = async (req: any, res: any) => {
 	try {
-		const { groupId, userId } = req.body;
+		const { groupId, userId, email } = req.body;
+		const targetEmail = (email || userId || "").toString().trim().toLowerCase();
+
+		if (!groupId) {
+			return res.status(400).json({ message: "Group ID is required" });
+		}
+		if (!targetEmail) {
+			return res.status(400).json({ message: "User email is required" });
+		}
 
 		// Fetch group and user in parallel for efficiency
-		const [group, user] = await Promise.all([
-			Group.findById(groupId).lean(),
-			User.findOne({ email: userId }).lean(),
+		const [group, targetUser] = await Promise.all([
+			Group.findById(groupId),
+			User.findOne({ email: targetEmail }),
 		]);
 
-		if (!group) return res.status(404).json({ message: "Group not found" });
+		if (!group) return res.status(404).json({ message: "Sub-event group not found" });
 
-		if (!group.admin.equals(req.user._id)) {
-			return res.status(403).json({ message: "Only admin can add moderators" });
+		const isCreator = group.admin.equals(req.user._id);
+		const isSuperAdmin = req.user?.role === "admin";
+		if (!isCreator && !isSuperAdmin) {
+			return res.status(403).json({ message: "Only event admin can add moderators" });
 		}
 
-		if (!user) return res.status(404).json({ message: "User not found" });
-
-		if (group.moderators.includes(user._id)) {
-			return res.status(400).json({ message: "User is already a moderator" });
+		if (!targetUser) {
+			return res.status(404).json({
+				message: "No user found with this email. Please ensure the user has signed up on the platform first.",
+			});
 		}
+
+		const targetUserId = targetUser._id;
+
+		// 1. Check whether he is an admin for this event
+		const event = await Event.findById(group.eventId);
+		if (
+			group.admin.equals(targetUserId) ||
+			(event?.userId && (event.userId._id || event.userId).toString() === targetUserId.toString())
+		) {
+			return res.status(400).json({
+				message: "User is an administrator for this event and cannot be added as a moderator.",
+			});
+		}
+
+		// 2. Check if already a moderator for this sub-event
+		if (group.moderators && group.moderators.some((m: any) => (m?._id || m).toString() === targetUserId.toString())) {
+			return res.status(400).json({
+				message: "User is already a moderator for this sub-event.",
+			});
+		}
+
+		// 3. Check whether he is registered for any event
+		const [registeredApplication, registeredRequest] = await Promise.all([
+			Application.findOne({ userId: targetUserId }),
+			JoinRequest.findOne({ user: targetUserId, status: { $in: ["pending", "approved"] } }),
+		]);
+
+		if (registeredApplication || registeredRequest) {
+			return res.status(400).json({
+				message: "User is registered for an event and cannot be assigned as a moderator.",
+			});
+		}
+
+		// 4. No moderator can be same for 2 events
+		const otherEventGroup = await Group.findOne({
+			eventId: { $ne: group.eventId },
+			moderators: targetUserId,
+		});
+
+		if (otherEventGroup) {
+			return res.status(400).json({
+				message: "User is already a moderator for another event. A user cannot be a moderator for two different events.",
+			});
+		}
+
 		const headGroup = await Group.findOne({
 			eventId: group.eventId,
 			isHead: true,
@@ -66,15 +121,62 @@ export const addModerator = async (req, res) => {
 		await Promise.all([
 			Group.updateOne(
 				{ _id: groupId },
-				{ $addToSet: { moderators: user._id, members: user._id } }
+				{ $addToSet: { moderators: targetUserId, members: targetUserId } }
 			),
-			Group.updateOne({ _id: headGroup._id }, { $addToSet: { members: user._id } }),
+			headGroup
+				? Group.updateOne({ _id: headGroup._id }, { $addToSet: { members: targetUserId } })
+				: Promise.resolve(),
 		]);
 
-		return res.status(200).json({ message: "Moderator added successfully" });
-	} catch (error) {
+		return res.status(200).json({
+			success: true,
+			message: "Moderator added successfully",
+			moderator: {
+				_id: targetUser._id,
+				userName: targetUser.userName,
+				email: targetUser.email,
+				profile_image_url: targetUser.profile_image_url,
+			},
+		});
+	} catch (error: any) {
 		logger.error("Error adding moderator:", error);
-		return res.status(500).json({ message: "Server error", error });
+		return res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+export const removeModerator = async (req: any, res: any) => {
+	try {
+		const { groupId, moderatorId } = req.body;
+
+		if (!groupId || !moderatorId) {
+			return res.status(400).json({ message: "Group ID and Moderator ID are required" });
+		}
+
+		const group = await Group.findById(groupId);
+		if (!group) return res.status(404).json({ message: "Sub-event group not found" });
+
+		const isCreator = group.admin.equals(req.user._id);
+		if (!isCreator) {
+			return res.status(403).json({ message: "Only event admin can remove moderators" });
+		}
+
+		await Group.updateOne(
+			{ _id: groupId },
+			{
+				$pull: {
+					moderators: moderatorId,
+					members: moderatorId,
+				},
+			}
+		);
+
+		return res.status(200).json({
+			success: true,
+			message: "Moderator removed successfully",
+		});
+	} catch (error: any) {
+		logger.error("Error removing moderator:", error);
+		return res.status(500).json({ message: "Server error", error: error.message });
 	}
 };
 
@@ -546,7 +648,13 @@ export const getGroupJoinRequests = async (req, res) => {
 
 export const getGroupByEventId = async (req, res) => {
 	try {
-		const groups = await Group.find({ eventId: req.params.eventId });
+		let groupQuery: any = Group.find({ eventId: req.params.eventId });
+		if (groupQuery && typeof groupQuery.populate === "function") {
+			groupQuery = groupQuery
+				.populate("moderators", "userName email profile_image_url phone")
+				.populate("admin", "userName email profile_image_url phone");
+		}
+		const groups = await groupQuery;
 
 		const filteredGroups = groups.filter((group) => !group.isHead);
 
@@ -600,8 +708,8 @@ export const getGroupByEventId = async (req, res) => {
 			const requestStatus = isMember
 				? "approved"
 				: rawStatus === "pending"
-				? "already requested"
-				: rawStatus;
+					? "already requested"
+					: rawStatus;
 
 			const isAdmin = userId
 				? adminId === userId

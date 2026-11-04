@@ -87,13 +87,16 @@ export const updateEvent = async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    if (req.user._id.toString() !== event.userId.toString()) {
+    const isCreator = req.user?._id?.toString() === event.userId?.toString();
+    const isSuperAdmin = req.user?.role === "admin";
+    if (!isCreator && !isSuperAdmin) {
       return res.status(401).json({
-        error: "unautorized you are not able to edit the event",
+        error: "Unauthorized: you are not able to edit this event",
       });
     }
+
     if (req.file) {
-      if (req.file && event.fileId) {
+      if (event.fileId) {
         try {
           await storage.getFile(bucketId, event.fileId);
           await storage.deleteFile(bucketId, event.fileId);
@@ -110,22 +113,69 @@ export const updateEvent = async (req, res) => {
       event.fileId = r.$id;
       event.imageUrl = link || event.imageUrl;
     }
-    event.title = req.body.title || event.title;
+
+    // Parse sub-events if passed as JSON string from FormData
+    const technical = typeof req.body.technicalEvents === "string" 
+      ? JSON.parse(req.body.technicalEvents) 
+      : req.body.technical || req.body.technicalEvents;
+    const nonTechnical = typeof req.body.nonTechnicalEvents === "string" 
+      ? JSON.parse(req.body.nonTechnicalEvents) 
+      : req.body.nonTechnical || req.body.nonTechnicalEvents;
+
+    event.title = req.body.title || req.body.eventName || event.title;
     event.description = req.body.description || event.description;
-    event.userId = req.user._id || event.userId;
-    event.technical = req.body.technical || event.technical;
-    event.nonTechnical = req.body.nonTechnical || event.nonTechnical;
-    event.startTime = req.body.startTime || event.startTime;
-    event.endTime = req.body.endTime || event.endTime;
-    event.swags = req.body.swags;
-    event.refreshments = req.body.refreshments;
+    if (req.body.eventDate) event.eventDate = req.body.eventDate;
+    if (req.body.startTime) event.startTime = req.body.startTime;
+    if (req.body.endTime) event.endTime = req.body.endTime;
+    if (technical !== undefined) event.technical = technical;
+    if (nonTechnical !== undefined) event.nonTechnical = nonTechnical;
+    if (req.body.paid !== undefined) event.paid = req.body.paid === true || req.body.paid === "true";
+    if (req.body.amount !== undefined) event.amount = Number(req.body.amount) || 0;
+    if (req.body.swags !== undefined) event.swags = req.body.swags === true || req.body.swags === "true";
+    if (req.body.refreshments !== undefined) event.refreshments = req.body.refreshments === true || req.body.refreshments === "true";
+
     const updatedevent = await event.save();
+
+    // Synchronize sub-event groups
+    if (technical || nonTechnical) {
+      const allNewTracks = [
+        ...(Array.isArray(technical) ? technical : []),
+        ...(Array.isArray(nonTechnical) ? nonTechnical : []),
+      ];
+
+      for (const track of allNewTracks) {
+        if (!track?.name) continue;
+        const existingGroup = await Group.findOne({ eventId: event._id, name: track.name, isHead: false });
+        if (existingGroup) {
+          if (track.limit !== undefined) existingGroup.limit = track.limit;
+          existingGroup.description = event.description;
+          await existingGroup.save();
+        } else {
+          await Group.create({
+            name: track.name,
+            description: event.description,
+            eventId: event._id,
+            admin: event.userId,
+            members: [req.user._id],
+            isHead: false,
+            limit: track.limit || 0,
+          });
+        }
+      }
+    }
+
+    // Keep head group title and description in sync
+    await Group.updateOne(
+      { eventId: event._id, isHead: true },
+      { name: event.title, description: event.description }
+    );
+
     res.status(200).json({
       updatedevent,
       message: "Event updated successfully",
     });
   } catch (error) {
-    logger.error("update event controller error" + error.message);
+    logger.error("update event controller error: " + error.message);
     res.status(400).json({ error: error.message });
   }
 };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addModerator,
+  removeModerator,
   approveRequest,
   createGroup,
   getGroupByEventId,
@@ -13,15 +14,13 @@ import {
   joinRequest,
 } from "../controllers/groupController.js";
 import protect from "../middleware/protect.js";
-import {
-  isAdminOrModerator,
-  isAdmin,
-} from "../middleware/isAdminOrModerator.js";
+import { isAdmin } from "../middleware/isAdminOrModerator.js";
 
 const router = Router();
 
 router.post("/create", protect, isAdmin, createGroup);
 router.post("/addModerator", protect, isAdmin, addModerator);
+router.post("/removeModerator", protect, isAdmin, removeModerator);
 router.get("/", protect, getGroups);
 router.post("/request", protect, joinRequest);
 router.post("/batch-request", protect, joinRequest);

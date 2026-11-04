@@ -192,12 +192,15 @@ export const getAppliedEvents = (eventId) =>
     .get(`${BASE_URL}/api/payment/${eventId}`, { withCredentials: true })
     .then((res) => res.data);
 
-export const updateEvent = (formData, eventId) =>
-  axios
+export const updateEvent = (formDataOrPayload, maybeEventId) => {
+  const formData = formDataOrPayload?.formData || formDataOrPayload;
+  const eventId = formDataOrPayload?.eventId || maybeEventId;
+  return axios
     .put(`${BASE_URL}/api/events/${eventId}`, formData, {
       withCredentials: true,
     })
     .then((res) => res.data);
+};
 
 export const fetchRoles = () =>
   axios.get(`${BASE_URL}/api/auth/check-role`, { withCredentials: true }).then((res) => res.data);
@@ -247,6 +250,35 @@ export const updateJoinRequestStatus = async ({ requestId, action, status }) => 
     .post(
       `${BASE_URL}/api/group/approve`,
       { requestId, action, status },
+      { withCredentials: true }
+    )
+    .then((res) => res.data);
+};
+
+export const addModerator = ({ groupId, email }) =>
+  axios
+    .post(
+      `${BASE_URL}/api/group/addModerator`,
+      { groupId, email, userId: email },
+      { withCredentials: true }
+    )
+    .then((res) => res.data);
+
+export const removeModerator = (arg1, arg2) => {
+  const payload =
+    typeof arg1 === "object" && arg1 !== null
+      ? arg1
+      : { groupId: arg1, moderatorId: arg2 };
+  const groupId = payload?.groupId || payload?.id;
+  const moderatorId =
+    payload?.moderatorId ||
+    payload?.userId ||
+    payload?.moderator?._id ||
+    payload?.moderator;
+  return axios
+    .post(
+      `${BASE_URL}/api/group/removeModerator`,
+      { groupId, moderatorId },
       { withCredentials: true }
     )
     .then((res) => res.data);

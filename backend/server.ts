@@ -82,6 +82,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/comment", commentRoutes);
 app.use("/api/group", groupRoutes);
+app.use("/api/groups", groupRoutes);
 app.use("/api/message", messageRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/profile", profileRoutes);

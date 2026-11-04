@@ -20,6 +20,7 @@ const About = lazy(() => import("./screen/About"));
 const ProfilePage = lazy(() => import("./screen/ProfilePage"));
 const MyTickets = lazy(() => import("./screen/MyTickets"));
 const AttendancePage = lazy(() => import("./screen/AttendancePage"));
+const ManageEvent = lazy(() => import("./screen/ManageEvent"));
 
 const App = () => {
   return (
@@ -47,6 +48,9 @@ const App = () => {
                 <Route path="/chats" element={<Group />} />
                 <Route path="/create-events" element={<CreateEvents />} />
                 <Route path="/updateEvent/:eventId" element={<EditEvents />} />
+                <Route path="/events/:eventId/edit" element={<EditEvents />} />
+                <Route path="/events/:eventId/manage" element={<ManageEvent />} />
+                <Route path="/events/:id/manage" element={<ManageEvent />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/events/:eventId/requests" element={<Request />} />
                 <Route path="/request" element={<Request />} />
