@@ -339,7 +339,7 @@ const PaymentPage = () => {
       {/* Top Breadcrumb & Navigation */}
       <div className="max-w-6xl mx-auto flex items-center justify-between pb-6 border-b border-outline-variant/30">
         <button
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="group flex items-center gap-2 text-xs sm:text-sm font-semibold text-on-surface-variant hover:text-on-surface transition"
         >
           <div className="w-8 h-8 rounded-full bg-surface-container-low border border-outline-variant/30 flex items-center justify-center group-hover:scale-105 transition">

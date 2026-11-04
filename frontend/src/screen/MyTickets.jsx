@@ -177,15 +177,11 @@ const MyTickets = () => {
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex flex-col gap-2 max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/15 text-primary-container text-xs font-bold uppercase tracking-wider w-fit">
-                  <span className="material-symbols-outlined text-sm">confirmation_number</span>
-                  <span>Ticket Wallet &amp; Access Passes</span>
-                </div>
                 <h1 className="font-headline-lg text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface">
                   My Tickets &amp; QR Passes
                 </h1>
                 <p className="font-body-md text-on-surface-variant text-sm md:text-base leading-relaxed">
-                  Your registered event passes are stored here. Present the persisted QR code at the venue gate for instant check-in verification.
+                  Your registered event passes are stored here. Present the QR code you received in mail at the venue gate for instant check-in verification.
                 </p>
               </div>
 
@@ -258,22 +254,20 @@ const MyTickets = () => {
               <button
                 type="button"
                 onClick={() => setFilterStatus("all")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  filterStatus === "all"
-                    ? "bg-primary-container text-on-primary shadow-sm"
-                    : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                }`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${filterStatus === "all"
+                  ? "bg-primary-container text-on-primary shadow-sm"
+                  : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
               >
                 All Passes ({stats.total})
               </button>
               <button
                 type="button"
                 onClick={() => setFilterStatus("active")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                  filterStatus === "active"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                }`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${filterStatus === "active"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 <span>Active Valid QRs ({stats.active})</span>
@@ -281,11 +275,10 @@ const MyTickets = () => {
               <button
                 type="button"
                 onClick={() => setFilterStatus("checked-in")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                  filterStatus === "checked-in"
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                }`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${filterStatus === "checked-in"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
               >
                 <span className="material-symbols-outlined text-xs">verified</span>
                 <span>Checked In ({stats.checkedIn})</span>
@@ -293,11 +286,10 @@ const MyTickets = () => {
               <button
                 type="button"
                 onClick={() => setFilterStatus("expired")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                  filterStatus === "expired"
-                    ? "bg-zinc-700 text-white shadow-sm"
-                    : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                }`}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${filterStatus === "expired"
+                  ? "bg-zinc-700 text-white shadow-sm"
+                  : "bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                  }`}
               >
                 <span className="material-symbols-outlined text-xs">timer_off</span>
                 <span>Expired ({stats.expired})</span>
@@ -478,13 +470,12 @@ const MyTickets = () => {
                           >
                             {/* Top Ribbon Accent */}
                             <div
-                              className={`absolute top-0 inset-x-0 h-1.5 ${
-                                meta.isExpired
-                                  ? "bg-zinc-600"
-                                  : meta.isScanned
+                              className={`absolute top-0 inset-x-0 h-1.5 ${meta.isExpired
+                                ? "bg-zinc-600"
+                                : meta.isScanned
                                   ? "bg-indigo-600"
                                   : "bg-gradient-to-r from-emerald-500 via-primary-container to-purple-600"
-                              }`}
+                                }`}
                             />
 
                             {/* Main Ticket Info (Left) */}
@@ -494,27 +485,24 @@ const MyTickets = () => {
                                 <div className="flex flex-wrap items-center gap-2">
                                   {/* QR Expiry Badge */}
                                   <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                                      meta.isExpired
-                                        ? "bg-zinc-800/40 text-zinc-400 border-zinc-700/60"
-                                        : "bg-emerald-950/40 text-emerald-300 border-emerald-500/30"
-                                    }`}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${meta.isExpired
+                                      ? "bg-zinc-800/40 text-zinc-400 border-zinc-700/60"
+                                      : "bg-emerald-950/40 text-emerald-300 border-emerald-500/30"
+                                      }`}
                                   >
                                     <span
-                                      className={`w-1.5 h-1.5 rounded-full ${
-                                        meta.isExpired ? "bg-zinc-400" : "bg-emerald-400 animate-pulse"
-                                      }`}
+                                      className={`w-1.5 h-1.5 rounded-full ${meta.isExpired ? "bg-zinc-400" : "bg-emerald-400 animate-pulse"
+                                        }`}
                                     />
                                     <span>{meta.isExpired ? "QR Expired" : "QR Active"}</span>
                                   </span>
 
                                   {/* Check-In Status Badge */}
                                   <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                                      meta.isScanned
-                                        ? "bg-indigo-950/40 text-indigo-300 border-indigo-500/30"
-                                        : "bg-amber-950/40 text-amber-300 border-amber-500/30"
-                                    }`}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${meta.isScanned
+                                      ? "bg-indigo-950/40 text-indigo-300 border-indigo-500/30"
+                                      : "bg-amber-950/40 text-amber-300 border-amber-500/30"
+                                      }`}
                                   >
                                     <span className="material-symbols-outlined text-xs">
                                       {meta.isScanned ? "verified" : "qr_code_scanner"}
@@ -524,11 +512,10 @@ const MyTickets = () => {
 
                                   {/* Pricing Pill */}
                                   <span
-                                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${
-                                      isPaid
-                                        ? "bg-secondary-container/40 text-on-secondary-container"
-                                        : "bg-tertiary-container/30 text-tertiary"
-                                    }`}
+                                    className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${isPaid
+                                      ? "bg-secondary-container/40 text-on-secondary-container"
+                                      : "bg-tertiary-container/30 text-tertiary"
+                                      }`}
                                   >
                                     {isPaid ? `Paid (${amountFormatted})` : "Free RSVP"}
                                   </span>
@@ -623,9 +610,8 @@ const MyTickets = () => {
                                   <img
                                     src={ticket.qrCodeUrl}
                                     alt={`QR for ${subeventName}`}
-                                    className={`w-36 h-36 object-contain rounded ${
-                                      meta.isExpired ? "opacity-60 grayscale" : "opacity-100"
-                                    }`}
+                                    className={`w-36 h-36 object-contain rounded ${meta.isExpired ? "opacity-60 grayscale" : "opacity-100"
+                                      }`}
                                   />
                                 ) : (
                                   <div className="w-36 h-36 flex flex-col items-center justify-center text-zinc-400 gap-1.5">
@@ -683,25 +669,7 @@ const MyTickets = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full bg-surface-container-low py-8 border-t border-surface-container-high/60 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-on-surface-variant text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-on-surface">ACN. Events</span>
-            <span>•</span>
-            <span>Verified Digital Passport System</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/events" className="hover:text-on-surface transition-colors">
-              Directory
-            </Link>
-            <Link to="/profile" className="hover:text-on-surface transition-colors">
-              User Profile
-            </Link>
-            <span>© 2025 ACN. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>
+
 
       {/* Ticket Pass Modal */}
       <TicketQRModal

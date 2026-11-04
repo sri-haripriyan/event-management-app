@@ -27,7 +27,7 @@ const Event = () => {
 			) : (
 				<div className="animate-fade-in pt-16">
 					<EventSection event={event} />
-					<CommentSection eventId={eventId} />
+					<CommentSection eventId={eventId} event={event} />
 					<ToastContainer />
 				</div>
 			)}

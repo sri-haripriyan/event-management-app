@@ -46,9 +46,12 @@ const App = () => {
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
                 <Route path="/chats" element={<Group />} />
+                <Route path="/community" element={<Group />} />
                 <Route path="/create-events" element={<CreateEvents />} />
                 <Route path="/updateEvent/:eventId" element={<EditEvents />} />
                 <Route path="/events/:eventId/edit" element={<EditEvents />} />
+                <Route path="/events/:eventId/settings" element={<ManageEvent />} />
+                <Route path="/events/:id/settings" element={<ManageEvent />} />
                 <Route path="/events/:eventId/manage" element={<ManageEvent />} />
                 <Route path="/events/:id/manage" element={<ManageEvent />} />
                 <Route path="/dashboard" element={<Dashboard />} />

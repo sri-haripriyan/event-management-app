@@ -123,21 +123,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Footer Block */}
-      <footer className="w-full border-t border-outline-variant/20 py-8 px-8 sm:px-12 z-10 bg-surface">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-6 text-[13px] text-on-surface-variant font-normal">
-          <div className="flex flex-col gap-1 text-center sm:text-left">
-            <span className="font-bold text-on-surface text-base tracking-wider leading-none mb-1">ACN.</span>
-            <span className="text-on-surface-variant/70 text-xs">© {new Date().getFullYear()} ACN. Global Events. All rights reserved.</span>
-          </div>
-          <div className="flex gap-6 text-on-surface-variant">
-            <a href="#" className="hover:text-on-surface transition">Terms</a>
-            <a href="#" className="hover:text-on-surface transition">Privacy</a>
-            <a href="#" className="hover:text-on-surface transition">Support</a>
-            <a href="#" className="hover:text-on-surface transition">Contact</a>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 };

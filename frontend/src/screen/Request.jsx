@@ -48,6 +48,16 @@ const Request = () => {
   const [loadingActionId, setLoadingActionId] = useState(null);
 
   // Query event-specific join requests if eventId is present
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else if (eventId) {
+      navigate(`/events/${eventId}`, { replace: true });
+    } else {
+      navigate("/events", { replace: true });
+    }
+  };
+
   const {
     data: eventData,
     isLoading: isEventRequestsLoading,
@@ -207,7 +217,7 @@ const Request = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate(`/events/${eventId}`)}
+            onClick={handleBack}
             className="px-5 py-2.5 rounded-xl bg-primary-container text-on-primary text-xs font-semibold hover:bg-surface-tint transition shadow-sm flex items-center gap-2 mt-2"
           >
             <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -249,7 +259,7 @@ const Request = () => {
           <div className="flex items-center gap-3 mt-2">
             <button
               type="button"
-              onClick={() => (eventId ? navigate(`/events/${eventId}`) : navigate(-1))}
+              onClick={handleBack}
               className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-on-surface transition flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -278,8 +288,8 @@ const Request = () => {
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-outline-variant/30">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => (eventId ? navigate(`/events/${eventId}`) : navigate(-1))}
-            className="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition shadow-sm group"
+            onClick={handleBack}
+            className="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition shadow-sm group shrink-0"
             title="Back"
           >
             <FiArrowLeft
@@ -288,7 +298,7 @@ const Request = () => {
             />
           </button>
           <div>
-            <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+            <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium flex-wrap">
               <Link to="/events" className="hover:underline">
                 Events
               </Link>
@@ -297,7 +307,9 @@ const Request = () => {
                   <span>/</span>
                   <Link
                     to={`/events/${eventId}`}
-                    className="hover:underline max-w-[180px] truncate"
+                    replace
+                    className="hover:underline max-w-[200px] truncate"
+                    title={event.title}
                   >
                     {event.title}
                   </Link>
@@ -317,6 +329,7 @@ const Request = () => {
         {eventId && (
           <Link
             to={`/events/${eventId}`}
+            replace
             className="text-xs font-semibold text-primary-container hover:underline flex items-center gap-1.5 bg-primary-container/10 px-3.5 py-1.5 rounded-full border border-primary-container/20 shadow-sm"
           >
             <span>View Public Event</span>

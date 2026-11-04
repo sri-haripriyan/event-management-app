@@ -57,7 +57,7 @@ export const createEvent = async (req, res) => {
       };
     });
     const headGroup = {
-      name: body.title,
+      name: "Moderators",
       description: body.description,
       eventId: newEvent._id,
       admin: body.user,
@@ -167,7 +167,7 @@ export const updateEvent = async (req, res) => {
     // Keep head group title and description in sync
     await Group.updateOne(
       { eventId: event._id, isHead: true },
-      { name: event.title, description: event.description }
+      { name: "Moderators", description: event.description }
     );
 
     res.status(200).json({

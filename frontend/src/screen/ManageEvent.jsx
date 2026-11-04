@@ -182,45 +182,60 @@ const ManageEvent = () => {
     );
   }
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      navigate(`/events/${currentEventId}`, { replace: true });
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-surface text-on-surface font-poppins pt-20 pb-16 px-4 sm:px-6 lg:px-8">
       <ToastContainer />
       <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
         {/* Top Navigation & Breadcrumbs */}
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant/20 pb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-outline-variant/20 pb-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(`/events/${currentEventId}`)}
-              className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface transition active:scale-95 border border-outline-variant/30 flex items-center justify-center"
-              title="Back to Event"
+              onClick={handleBack}
+              className="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition shadow-sm group shrink-0"
+              title="Back"
             >
-              <FiArrowLeft size={18} />
+              <FiArrowLeft
+                size={18}
+                className="group-hover:-translate-x-0.5 transition-transform"
+              />
             </button>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wider font-semibold text-primary-container">
-                  Event Management
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant border border-outline-variant/30 font-medium">
-                  {tracks.length} Sub-event{tracks.length === 1 ? "" : "s"}
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium flex-wrap">
+                <Link to="/events" className="hover:underline">
+                  Events
+                </Link>
+                {event?.title && (
+                  <>
+                    <span>/</span>
+                    <Link
+                      to={`/events/${currentEventId}`}
+                      replace
+                      className="hover:underline max-w-[200px] truncate"
+                      title={event.title}
+                    >
+                      {event.title}
+                    </Link>
+                  </>
+                )}
+                <span>/</span>
+                <span className="text-primary-container font-semibold">
+                  Settings
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
-                Manage Event
+              <h1 className="text-xl sm:text-2xl font-extrabold text-on-surface mt-0.5">
+                Settings
               </h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              to={`/events/${currentEventId}`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-xs font-semibold text-on-surface transition active:scale-95"
-            >
-              <span className="material-symbols-outlined text-base">visibility</span>
-              <span>View Public Page</span>
-            </Link>
-
-          </div>
         </div>
 
         {/* Event Quick Summary Banner */}

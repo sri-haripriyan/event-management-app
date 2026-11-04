@@ -71,9 +71,9 @@ const EventSection = ({ event }) => {
     const modIdSet = new Set((group?.moderators || []).map((m) => (m?._id || m)?.toString()));
     const fallbackAttendeeCount = Array.isArray(group?.members)
       ? group.members.filter((m) => {
-          const mId = (m?._id || m)?.toString();
-          return mId && mId !== adminId && !modIdSet.has(mId);
-        }).length
+        const mId = (m?._id || m)?.toString();
+        return mId && mId !== adminId && !modIdSet.has(mId);
+      }).length
       : 0;
     const membersCount = group?.membersCount !== undefined ? group.membersCount : fallbackAttendeeCount;
 
@@ -305,32 +305,30 @@ const EventSection = ({ event }) => {
       <div
         key={groupId || index}
         onClick={() => isAvailable && groupId && handleToggleTrack(groupId)}
-        className={`p-3.5 rounded-2xl border transition-all duration-200 select-none flex items-center justify-between gap-3 ${
-          isAlreadyRequested
-            ? "bg-amber-500/10 border-amber-500/25 cursor-not-allowed"
-            : isApproved
+        className={`p-3.5 rounded-2xl border transition-all duration-200 select-none flex items-center justify-between gap-3 ${isAlreadyRequested
+          ? "bg-amber-500/10 border-amber-500/25 cursor-not-allowed"
+          : isApproved
             ? "bg-emerald-500/10 border-emerald-500/25 cursor-not-allowed"
             : isRejected
-            ? "bg-rose-500/10 border-rose-500/25 cursor-not-allowed opacity-80"
-            : isSelected
-            ? "bg-primary-container/10 border-primary-container ring-2 ring-primary-container/25 shadow-sm cursor-pointer"
-            : "bg-surface-container-low hover:bg-surface-container border-outline-variant/30 hover:border-outline-variant/60 cursor-pointer"
-        }`}
+              ? "bg-rose-500/10 border-rose-500/25 cursor-not-allowed opacity-80"
+              : isSelected
+                ? "bg-primary-container/10 border-primary-container ring-2 ring-primary-container/25 shadow-sm cursor-pointer"
+                : "bg-surface-container-low hover:bg-surface-container border-outline-variant/30 hover:border-outline-variant/60 cursor-pointer"
+          }`}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {/* Custom Checkbox / Status Icon */}
           <div
-            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${
-              isAlreadyRequested
-                ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                : isApproved
+            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${isAlreadyRequested
+              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+              : isApproved
                 ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                 : isRejected
-                ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
-                : isSelected
-                ? "bg-primary-container text-on-primary shadow-sm"
-                : "border-2 border-outline-variant/60 group-hover:border-primary-container/60 bg-surface-container-lowest"
-            }`}
+                  ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                  : isSelected
+                    ? "bg-primary-container text-on-primary shadow-sm"
+                    : "border-2 border-outline-variant/60 group-hover:border-primary-container/60 bg-surface-container-lowest"
+              }`}
           >
             {isAlreadyRequested && <FiClock size={13} />}
             {isApproved && <FiCheckCircle size={13} />}
@@ -345,7 +343,7 @@ const EventSection = ({ event }) => {
             <div className="flex items-center gap-2 mt-0.5 text-xs text-on-surface-variant">
               {limit && (
                 <span className="font-medium text-[11px] bg-surface-container px-2 py-0.5 rounded-md">
-                  Capacity: {membersCount}/{limit}
+                  Capacity:{limit} Seats remaining: {limit - membersCount}
                 </span>
               )}
               {isAlreadyRequested && (
@@ -384,11 +382,10 @@ const EventSection = ({ event }) => {
           )}
           {isAvailable && (
             <span
-              className={`text-xs px-3 py-1 rounded-full font-semibold transition border ${
-                isSelected
-                  ? "bg-primary-container text-on-primary border-primary-container shadow-sm"
-                  : "bg-surface-container-high/60 text-on-surface-variant border-outline-variant/40 hover:bg-primary-container/10 hover:text-primary-container hover:border-primary-container/30"
-              }`}
+              className={`text-xs px-3 py-1 rounded-full font-semibold transition border ${isSelected
+                ? "bg-primary-container text-on-primary border-primary-container shadow-sm"
+                : "bg-surface-container-high/60 text-on-surface-variant border-outline-variant/40 hover:bg-primary-container/10 hover:text-primary-container hover:border-primary-container/30"
+                }`}
             >
               {isSelected ? "Selected" : "Select"}
             </span>
@@ -402,36 +399,36 @@ const EventSection = ({ event }) => {
   const eventCreatorId = event?.userId?._id
     ? String(event.userId._id)
     : event?.userId
-    ? String(event.userId)
-    : null;
+      ? String(event.userId)
+      : null;
 
   // 1. Creator of THIS event or platform super-admin
   const isEventCreator = Boolean(
     currentUserId &&
-      eventCreatorId &&
-      (currentUserId === eventCreatorId || user?.role === "admin")
+    eventCreatorId &&
+    (currentUserId === eventCreatorId || user?.role === "admin")
   );
 
   // 2. Sub-event Admin or Moderator for THIS specific event
   const isSubEventModeratorOrAdmin = Boolean(
     currentUserId &&
-      Array.isArray(subEventGroups) &&
-      subEventGroups.some((g) => {
-        const groupAdminId = g?.admin?._id
-          ? String(g.admin._id)
-          : g?.admin
+    Array.isArray(subEventGroups) &&
+    subEventGroups.some((g) => {
+      const groupAdminId = g?.admin?._id
+        ? String(g.admin._id)
+        : g?.admin
           ? String(g.admin)
           : null;
-        const isAdm = g?.isAdmin === true || (groupAdminId && groupAdminId === currentUserId);
-        const isMod =
-          g?.isModerator === true ||
-          (Array.isArray(g?.moderators) &&
-            g.moderators.some((m) => {
-              const modId = m?._id ? String(m._id) : m ? String(m) : null;
-              return modId && modId === currentUserId;
-            }));
-        return Boolean(isAdm || isMod);
-      })
+      const isAdm = g?.isAdmin === true || (groupAdminId && groupAdminId === currentUserId);
+      const isMod =
+        g?.isModerator === true ||
+        (Array.isArray(g?.moderators) &&
+          g.moderators.some((m) => {
+            const modId = m?._id ? String(m._id) : m ? String(m) : null;
+            return modId && modId === currentUserId;
+          }));
+      return Boolean(isAdm || isMod);
+    })
   );
 
   // Show Organizer Controls strictly only for admins and moderators of THIS event
@@ -442,28 +439,17 @@ const EventSection = ({ event }) => {
       {/* Top Header Navigation */}
       <div className="max-w-7xl mx-auto px-6 pt-6 flex items-center justify-between">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/events")}
           className="group flex items-center justify-center w-10 h-10 rounded-full bg-surface-container-lowest border border-outline-variant/30 hover:border-outline-variant/60 shadow-sm transition"
-          aria-label="Go back"
+          aria-label="Back to events"
+          title="Back to events"
         >
           <FiArrowLeft
             className="text-on-surface-variant group-hover:text-on-surface group-hover:-translate-x-0.5 transition-transform"
             size={18}
           />
         </button>
-        <div className="flex items-center gap-3">
-          {canManageEvent && (
-            <Link
-              to={`/events/${event?._id}/manage`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 hover:border-primary-container text-on-surface hover:text-primary-container text-xs font-semibold shadow-sm transition active:scale-95"
-              title="Manage event and moderators"
-            >
-              <span className="material-symbols-outlined text-base text-primary-container">settings</span>
-              <span>Manage</span>
-            </Link>
-          )}
-          <EventOptions event={event} subEventGroups={subEventGroups} />
-        </div>
+
       </div>
 
       {/* Main Grid Layout */}
@@ -471,7 +457,7 @@ const EventSection = ({ event }) => {
         {/* Left Column: Event details (2/3 width on desktop) */}
         <div className="lg:col-span-2 space-y-8 animate-fade-in">
           <div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-4">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight mb-4">
               {event?.title}
             </h1>
 
@@ -650,11 +636,10 @@ const EventSection = ({ event }) => {
                   type="button"
                   onClick={event?.paid ? handlePaidProceed : handleFreeRegister}
                   disabled={isPending}
-                  className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm transition duration-200 shadow-md flex items-center justify-center gap-2 ${
-                    event?.paid
-                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white"
-                      : "bg-primary-container hover:bg-surface-tint text-on-primary"
-                  }`}
+                  className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-sm transition duration-200 shadow-md flex items-center justify-center gap-2 ${event?.paid
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white"
+                    : "bg-primary-container hover:bg-surface-tint text-on-primary"
+                    }`}
                 >
                   {isPending ? (
                     <Spinner size="sm" />
@@ -737,22 +722,20 @@ const EventSection = ({ event }) => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div
-                  className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${
-                    event?.swags
-                      ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
-                      : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
-                  }`}
+                  className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.swags
+                    ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
+                    : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
+                    }`}
                 >
                   <FiGift size={16} />
                   <span>Swags {event?.swags ? "Included" : "None"}</span>
                 </div>
 
                 <div
-                  className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${
-                    event?.refreshments
-                      ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
-                      : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
-                  }`}
+                  className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.refreshments
+                    ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
+                    : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
+                    }`}
                 >
                   <FiCoffee size={16} />
                   <span>
@@ -770,13 +753,13 @@ const EventSection = ({ event }) => {
                   <span>Organizer Controls</span>
                 </div>
 
-                {/* Manage Event Button with settings icon */}
+                {/* Settings Button with settings icon */}
                 <Link
-                  to={`/events/${event?._id}/manage`}
+                  to={`/events/${event?._id}/settings`}
                   className="w-full text-center bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold py-3 rounded-xl transition duration-200 shadow-sm flex items-center justify-center gap-2 text-sm border border-outline-variant/30 hover:border-outline-variant/60"
                 >
                   <span className="material-symbols-outlined text-lg text-primary-container">settings</span>
-                  <span>Manage</span>
+                  <span>Settings</span>
                 </Link>
 
                 {!event?.paid && (
@@ -850,11 +833,10 @@ const EventSection = ({ event }) => {
                     type="button"
                     onClick={handlePaidProceed}
                     disabled={selectedGroupIds.length === 0}
-                    className={`block w-full text-center font-semibold py-3 rounded-xl transition duration-200 shadow-md ${
-                      selectedGroupIds.length > 0
-                        ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/20 active:scale-[0.99] cursor-pointer"
-                        : "bg-surface-container-high text-on-surface-variant/60 cursor-not-allowed border border-outline-variant/30"
-                    }`}
+                    className={`block w-full text-center font-semibold py-3 rounded-xl transition duration-200 shadow-md ${selectedGroupIds.length > 0
+                      ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-900/20 active:scale-[0.99] cursor-pointer"
+                      : "bg-surface-container-high text-on-surface-variant/60 cursor-not-allowed border border-outline-variant/30"
+                      }`}
                   >
                     {selectedGroupIds.length > 0
                       ? `Proceed to Payment (${selectedGroupIds.length})`
@@ -865,15 +847,14 @@ const EventSection = ({ event }) => {
                     type="button"
                     onClick={handleFreeRegister}
                     disabled={selectedGroupIds.length === 0 || isPending}
-                    className={`block w-full text-center font-semibold py-3 rounded-xl transition duration-200 shadow-md ${
-                      selectedGroupIds.length > 0 && !isPending
-                        ? "bg-primary-container hover:bg-surface-tint text-on-primary shadow-primary-container/20 active:scale-[0.99] cursor-pointer"
-                        : allAlreadyRequested
+                    className={`block w-full text-center font-semibold py-3 rounded-xl transition duration-200 shadow-md ${selectedGroupIds.length > 0 && !isPending
+                      ? "bg-primary-container hover:bg-surface-tint text-on-primary shadow-primary-container/20 active:scale-[0.99] cursor-pointer"
+                      : allAlreadyRequested
                         ? "bg-amber-500/15 border border-amber-500/35 text-amber-600 dark:text-amber-400 cursor-not-allowed"
                         : allApproved
-                        ? "bg-emerald-500/15 border border-emerald-500/35 text-emerald-600 dark:text-emerald-400 cursor-not-allowed"
-                        : "bg-surface-container-high text-on-surface-variant/60 cursor-not-allowed border border-outline-variant/30"
-                    }`}
+                          ? "bg-emerald-500/15 border border-emerald-500/35 text-emerald-600 dark:text-emerald-400 cursor-not-allowed"
+                          : "bg-surface-container-high text-on-surface-variant/60 cursor-not-allowed border border-outline-variant/30"
+                      }`}
                   >
                     {isPending ? (
                       <div className="flex items-center justify-center gap-2">

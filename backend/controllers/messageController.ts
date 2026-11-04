@@ -9,11 +9,28 @@ export const sendMessage = async (req, res) => {
 
   try {
     const group = await Group.findById(groupId);
-    if (!group.members.includes(user._id)) {
-      res
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+    const userIdStr = user._id.toString();
+    const isMember = (group.members || []).some(
+      (m: any) => (m?._id || m)?.toString() === userIdStr
+    );
+    const isAdmin = (group.admin?._id || group.admin)?.toString() === userIdStr;
+    const isModerator = (group.moderators || []).some(
+      (m: any) => (m?._id || m)?.toString() === userIdStr
+    );
+
+    if (group.isHead) {
+      if (!isAdmin && !isModerator && user.role !== "admin") {
+        return res
+          .status(403)
+          .json({ error: "Unauthorized: only event admin and moderators can send messages in this group" });
+      }
+    } else if (!isMember && !isAdmin && !isModerator && user.role !== "admin") {
+      return res
         .status(403)
-        .json({ error: "unauthorized no allowed to send message" });
-      return;
+        .json({ error: "Unauthorized: not allowed to send message" });
     }
     const newMessage = await Message.create({
       groupId,
@@ -36,11 +53,28 @@ export const getMessages = async (req, res) => {
   const user = req.user;
   try {
     const group = await Group.findById(groupId);
-    if (!group.members.includes(user._id)) {
-      res
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+    const userIdStr = user._id.toString();
+    const isMember = (group.members || []).some(
+      (m: any) => (m?._id || m)?.toString() === userIdStr
+    );
+    const isAdmin = (group.admin?._id || group.admin)?.toString() === userIdStr;
+    const isModerator = (group.moderators || []).some(
+      (m: any) => (m?._id || m)?.toString() === userIdStr
+    );
+
+    if (group.isHead) {
+      if (!isAdmin && !isModerator && user.role !== "admin") {
+        return res
+          .status(403)
+          .json({ message: "Unauthorized: only event admin and moderators can view messages in this group" });
+      }
+    } else if (!isMember && !isAdmin && !isModerator && user.role !== "admin") {
+      return res
         .status(403)
-        .json({ message: "unauthorized no allowed to get message" });
-      return;
+        .json({ message: "Unauthorized: not allowed to get message" });
     }
     const messages = await Message.find({ groupId })
       .sort({ createdAt: 1 })

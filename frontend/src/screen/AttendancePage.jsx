@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { getEventAttendance, markEventAttendance, getGroupByEventId } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
+import { FiArrowLeft } from "react-icons/fi";
 
 const AttendancePage = () => {
   const { eventId, title: paramTitle } = useParams();
@@ -466,7 +467,7 @@ const AttendancePage = () => {
           <div className="flex items-center gap-3 mt-2">
             <button
               type="button"
-              onClick={() => (eventId ? navigate(`/events/${eventId}`) : navigate(-1))}
+              onClick={handleBack}
               className="px-4 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-on-surface transition-colors flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -495,25 +496,41 @@ const AttendancePage = () => {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => (eventId ? navigate(`/events/${eventId}`) : navigate(-1))}
-              className="group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 text-on-surface transition-all shadow-sm shrink-0 font-medium text-xs sm:text-sm"
-              title="Return to event page"
+              onClick={handleBack}
+              className="w-10 h-10 rounded-full bg-surface-container-low hover:bg-surface-container border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition shadow-sm group shrink-0"
+              title="Back"
             >
-              <span className="material-symbols-outlined text-lg group-hover:-translate-x-0.5 transition-transform">
-                arrow_back
-              </span>
-              <span className="font-semibold">Back to Event</span>
+              <FiArrowLeft
+                size={18}
+                className="group-hover:-translate-x-0.5 transition-transform"
+              />
             </button>
 
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary-container bg-primary-container/15 px-2 py-0.5 rounded">
-                  Gate Management
+            <div>
+              <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium flex-wrap">
+                <Link to="/events" className="hover:underline">
+                  Events
+                </Link>
+                {eventTitle && (
+                  <>
+                    <span>/</span>
+                    <Link
+                      to={`/events/${eventId}`}
+                      replace
+                      className="hover:underline max-w-[200px] truncate"
+                      title={eventTitle}
+                    >
+                      {eventTitle}
+                    </Link>
+                  </>
+                )}
+                <span>/</span>
+                <span className="text-primary-container font-semibold">
+                  Attendance
                 </span>
-                <span className="text-xs text-on-surface-variant">Live Verification</span>
               </div>
-              <h1 className="text-lg md:text-xl font-extrabold text-on-surface truncate">
-                {eventTitle}
+              <h1 className="text-xl sm:text-2xl font-extrabold text-on-surface mt-0.5">
+                Event Attendance
               </h1>
             </div>
           </div>

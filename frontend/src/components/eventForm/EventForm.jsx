@@ -189,6 +189,20 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
     },
   });
 
+  const handleBack = () => {
+    if (step > 1) {
+      prevStep();
+      return;
+    }
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else if (mode === "edit" && eventId) {
+      navigate(`/events/${eventId}`, { replace: true });
+    } else {
+      navigate("/events", { replace: true });
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -252,7 +266,7 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
         {/* Back Navigation Button */}
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="group flex items-center gap-2 px-4 py-2 bg-surface-container-low border border-outline-variant/30 hover:border-outline-variant/60 text-on-surface rounded-xl transition text-sm font-medium self-start active:scale-95"
         >
           <span className="transform group-hover:-translate-x-0.5 transition-transform">←</span> Back

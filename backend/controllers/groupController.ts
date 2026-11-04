@@ -20,7 +20,7 @@ export const createGroup = async (req, res) => {
 
 		// Create a new group
 		const newGroup = await Group.create({
-			name,
+			name: isHead ? "Moderators" : name,
 			eventId,
 			admin: req.user._id,
 			members: [req.user._id],
@@ -124,7 +124,13 @@ export const addModerator = async (req: any, res: any) => {
 				{ $addToSet: { moderators: targetUserId, members: targetUserId } }
 			),
 			headGroup
-				? Group.updateOne({ _id: headGroup._id }, { $addToSet: { members: targetUserId } })
+				? Group.updateOne(
+					{ _id: headGroup._id },
+					{
+						$addToSet: { members: targetUserId, moderators: targetUserId },
+						$set: { name: "Moderators" },
+					}
+				)
 				: Promise.resolve(),
 		]);
 
@@ -170,6 +176,26 @@ export const removeModerator = async (req: any, res: any) => {
 			}
 		);
 
+		// Check if moderator still moderates any other subevent for this event
+		const remainingSubeventsWithMod = await Group.findOne({
+			eventId: group.eventId,
+			_id: { $ne: groupId },
+			moderators: moderatorId,
+		});
+
+		if (!remainingSubeventsWithMod) {
+			// Remove from head group if no longer moderating any subevent for this event
+			await Group.updateOne(
+				{ eventId: group.eventId, isHead: true },
+				{
+					$pull: {
+						moderators: moderatorId,
+						members: moderatorId,
+					},
+				}
+			);
+		}
+
 		return res.status(200).json({
 			success: true,
 			message: "Moderator removed successfully",
@@ -189,6 +215,9 @@ export const getGroupInfo = async (req, res) => {
 		if (group == null) {
 			return res.status(200).json({ message: "group Not Found" });
 		}
+		if (group.isHead) {
+			group.name = "Moderators";
+		}
 		res.status(200).json(group);
 	} catch (error) {
 		logger.error("getGroupInfo controller error" + error.message);
@@ -199,12 +228,12 @@ export const getGroupInfo = async (req, res) => {
 export const getGroups = async (req, res) => {
 	try {
 		const userId = req.user._id; // User ID from the request
-		const role = req.query.role || "member"; // Get role from query params, default to "member"
+		const role = req.query?.role || "member"; // Get role from query params, default to "member"
 
-		const matchCondition =
+		const matchCondition: any =
 			role === "admin"
-				? { admin: userId } // Match groups where the user is an admin
-				: { members: userId };
+				? { $or: [{ admin: userId }, { moderators: userId }] }
+				: { $or: [{ members: userId }, { admin: userId }, { moderators: userId }] };
 
 		const result = await Group.aggregate([
 			{
@@ -280,11 +309,72 @@ export const getGroups = async (req, res) => {
 			},
 		]);
 
-		if (!result.length) {
-			return res.status(200).json(result);
+		if (!result || !result.length) {
+			return res.status(200).json([]);
 		}
 
-		res.status(200).json(result);
+		// Filter and sanitize groups per event:
+		// Head chat group ("Moderators") MUST ONLY be shown to moderators and admin (event creator)
+		const sanitizedResult = await Promise.all(
+			result.map(async (eventItem: any) => {
+				const eventId = eventItem._id;
+				const userIdStr = userId.toString();
+
+				// Check if current user is admin (event creator or group admin)
+				const eventCreatorId = (eventItem.eventDetails?.userId?._id || eventItem.eventDetails?.userId)?.toString();
+				const isEventAdmin =
+					eventCreatorId === userIdStr ||
+					(eventItem.groups || []).some((g: any) => (g.admin?._id || g.admin)?.toString() === userIdStr);
+
+				// Check if current user is moderator of any subevent in this event
+				const isEventModerator =
+					(eventItem.groups || []).some((g: any) =>
+						(g.moderators || []).some((m: any) => (m?._id || m)?.toString() === userIdStr)
+					) ||
+					Boolean(await Group.exists({ eventId, moderators: userId }));
+
+				const canAccessHead = isEventAdmin || isEventModerator || req.user?.role === "admin";
+
+				let eventGroups = eventItem.groups || [];
+
+				if (canAccessHead) {
+					let headGroup = eventGroups.find((g: any) => g.isHead);
+					if (!headGroup) {
+						// Fetch the head group if it wasn't returned in the aggregate match
+						const foundHead = await Group.findOne({ eventId, isHead: true })
+							.populate("admin", "-password")
+							.populate("moderators", "-password")
+							.populate("members", "-password")
+							.lean();
+						if (foundHead) {
+							headGroup = foundHead;
+							eventGroups.unshift(headGroup);
+						}
+					}
+					if (headGroup) {
+						headGroup.name = "Moderators";
+					}
+				} else {
+					// Strictly filter out head group for regular attendees/non-moderators
+					eventGroups = eventGroups.filter((g: any) => !g.isHead);
+				}
+
+				// Ensure all head groups in output are named "Moderators"
+				eventGroups.forEach((g: any) => {
+					if (g.isHead) {
+						g.name = "Moderators";
+					}
+				});
+
+				return {
+					...eventItem,
+					groups: eventGroups,
+				};
+			})
+		);
+
+		const finalResult = sanitizedResult.filter((item: any) => item && item.groups && item.groups.length > 0);
+		res.status(200).json(finalResult);
 	} catch (error) {
 		logger.error("Error fetching grouped data:", error);
 		res.status(500).json({ message: "Internal server error" });

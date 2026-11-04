@@ -14,6 +14,7 @@ import {
   getEventJoinRequests,
   addModerator,
   removeModerator,
+  getGroups,
 } from "../controllers/groupController.js";
 import { getEventAttendance } from "../controllers/ticketController.js";
 
@@ -1167,6 +1168,83 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
       JoinRequest.findOne = origJoinRequestFindOne;
       Group.findOne = origGroupFindOne;
       Group.updateOne = origGroupUpdateOne;
+    }
+  });
+  test("24. getGroups renames head group to 'Moderators' and shows only to admin and moderators, hiding from regular attendees", async () => {
+    const origAggregate = Group.aggregate;
+    const origExists = Group.exists;
+    const origFindOne = Group.findOne;
+
+    const testEventId = new mongoose.Types.ObjectId();
+    const testAdminId = new mongoose.Types.ObjectId();
+    const testModId = new mongoose.Types.ObjectId();
+    const testAttendeeId = new mongoose.Types.ObjectId();
+
+    const mockHeadGroup = {
+      _id: new mongoose.Types.ObjectId(),
+      name: "Old Head Title",
+      isHead: true,
+      admin: { _id: testAdminId },
+      moderators: [testModId],
+      members: [testAdminId, testModId],
+    };
+
+    const mockSubGroup = {
+      _id: new mongoose.Types.ObjectId(),
+      name: "Track 1",
+      isHead: false,
+      admin: { _id: testAdminId },
+      moderators: [testModId],
+      members: [testAttendeeId, testAdminId],
+    };
+
+    try {
+      // 1. Regular attendee calls getGroups: Head group must be filtered out!
+      (Group as any).aggregate = () => Promise.resolve([
+        {
+          _id: testEventId,
+          eventDetails: { _id: testEventId, userId: testAdminId, title: "Sample Event" },
+          totalGroups: 2,
+          membersCount: 2,
+          groups: [{ ...mockSubGroup }, { ...mockHeadGroup }],
+        },
+      ]);
+      (Group as any).exists = () => Promise.resolve(null);
+
+      const { req: reqAttendee, res: resAttendee } = createMockReqRes({}, {}, { _id: testAttendeeId, role: "user" });
+      await getGroups(reqAttendee, resAttendee);
+
+      assert.equal(resAttendee.statusCode, 200);
+      assert.equal(resAttendee.jsonData.length, 1);
+      // Head group must be stripped out for attendee
+      const attendeeGroups = resAttendee.jsonData[0].groups;
+      assert.equal(attendeeGroups.some((g: any) => g.isHead), false);
+      assert.equal(attendeeGroups.length, 1);
+      assert.equal(attendeeGroups[0].name, "Track 1");
+
+      // 2. Admin calls getGroups: Head group is visible and renamed to 'Moderators'
+      const { req: reqAdmin, res: resAdmin } = createMockReqRes({}, {}, { _id: testAdminId, role: "user" });
+      await getGroups(reqAdmin, resAdmin);
+
+      assert.equal(resAdmin.statusCode, 200);
+      const adminGroups = resAdmin.jsonData[0].groups;
+      const headForAdmin = adminGroups.find((g: any) => g.isHead);
+      assert.ok(headForAdmin, "Head group should be present for admin");
+      assert.equal(headForAdmin.name, "Moderators");
+
+      // 3. Moderator calls getGroups: Head group is visible and renamed to 'Moderators'
+      const { req: reqMod, res: resMod } = createMockReqRes({}, {}, { _id: testModId, role: "user" });
+      await getGroups(reqMod, resMod);
+
+      assert.equal(resMod.statusCode, 200);
+      const modGroups = resMod.jsonData[0].groups;
+      const headForMod = modGroups.find((g: any) => g.isHead);
+      assert.ok(headForMod, "Head group should be present for moderator");
+      assert.equal(headForMod.name, "Moderators");
+    } finally {
+      Group.aggregate = origAggregate;
+      Group.exists = origExists;
+      Group.findOne = origFindOne;
     }
   });
 });

@@ -900,29 +900,7 @@ const ProfilePage = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full bg-surface-container-low py-space-xl border-t border-surface-container-high/60 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
-          <div className="flex items-center gap-space-sm">
-            <span className="font-headline-sm text-headline-sm text-on-surface font-bold">
-              ACN. Events
-            </span>
-            <span className="text-outline">•</span>
-            <span>Connecting minds, accelerating communities.</span>
-          </div>
 
-          <div className="flex items-center gap-space-lg">
-            <Link to="/events" className="hover:text-on-surface transition-colors">
-              Events Directory
-            </Link>
-            <Link to="/about" className="hover:text-on-surface transition-colors">
-              Community Guidelines
-            </Link>
-            <span className="text-outline">•</span>
-            <span>© 2025 ACN. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>
 
       {/* Personal Details Modal */}
       <PersonalDataModal

@@ -97,7 +97,13 @@ app.use((err, req, res, next) => {
 });
 
 // Connect to Database and then Start Server
-connectDB().then(() => {
+connectDB().then(async () => {
+  try {
+    const Group = (await import("./models/groupModel.js")).default;
+    await Group.updateMany({ isHead: true, name: { $ne: "Moderators" } }, { $set: { name: "Moderators" } });
+  } catch (err: any) {
+    logger.error("Error migrating head group names: " + err.message);
+  }
   server.listen(process.env.PORT || 5000, () => {
     logger.info(
       `Server running on http://localhost:${process.env.PORT || 5000}`

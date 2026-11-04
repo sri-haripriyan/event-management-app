@@ -124,10 +124,10 @@ const EventOptions = ({ event, subEventGroups = [] }) => {
 					{isEventCreator && (
 						<div className="flex flex-col gap-2 border-t border-outline-variant/20 pt-1">
 							<div
-								onClick={() => navigate(`/events/${event?._id}/manage`)}
+								onClick={() => navigate(`/events/${event?._id}/settings`)}
 								className="hover:shadow-md cursor-pointer duration-200 text-blue-900 px-2 py-1 rounded-sm flex items-center gap-1.5 text-xs font-medium"
 							>
-								<span className="material-symbols-outlined text-base">settings</span> Manage
+								<span className="material-symbols-outlined text-base">settings</span> Settings
 							</div>
 							<div
 								onClick={() => navigate(`/events/${event?._id}/edit`)}

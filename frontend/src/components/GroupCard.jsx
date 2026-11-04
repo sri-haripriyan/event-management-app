@@ -11,7 +11,7 @@ const GroupCard = ({ group, eventId }) => {
         onClick={toggleGroup}>
         <div>
           <h4 className="text-base font-semibold md:flex items-center gap-2">
-            {group?.name}
+            {group?.isHead ? "Moderators" : group?.name}
             {group?.isHead && (
               <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-xs font-bold uppercase">
                 Head Group
