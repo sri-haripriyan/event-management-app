@@ -139,8 +139,8 @@ const Request = () => {
     return eventId
       ? eventData?.requests || []
       : Array.isArray(globalRequests)
-      ? globalRequests
-      : [];
+        ? globalRequests
+        : [];
   }, [eventId, eventData?.requests, globalRequests]);
 
   // Filter requests by status, track, and search query
@@ -245,15 +245,15 @@ const Request = () => {
             {isForbidden
               ? "Access Denied"
               : isPaid
-              ? "Paid Event"
-              : "Failed to load requests"}
+                ? "Paid Event"
+                : "Failed to load requests"}
           </h2>
           <p className="text-xs text-on-surface-variant leading-relaxed">
             {isForbidden
               ? "Only the event host or verified organizers have permission to view and manage join requests for this event."
               : isPaid
-              ? "Join requests are not applicable for paid events. Attendees register directly through payment."
-              : eventError?.response?.data?.message ||
+                ? "Join requests are not applicable for paid events. Attendees register directly through payment."
+                : eventError?.response?.data?.message ||
                 "There was an issue retrieving join requests."}
           </p>
           <div className="flex items-center gap-3 mt-2">
@@ -353,9 +353,7 @@ const Request = () => {
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-primary-container bg-primary-container/10 px-2.5 py-0.5 rounded-full border border-primary-container/20">
-                  Event Organizer Portal
-                </span>
+
                 <h2 className="text-lg sm:text-xl font-bold text-on-surface truncate mt-1">
                   {event.title}
                 </h2>
@@ -430,19 +428,17 @@ const Request = () => {
                 <button
                   key={tab.id}
                   onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${
-                    statusFilter === tab.id
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${statusFilter === tab.id
                       ? "bg-primary-container text-on-primary shadow-sm"
                       : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
-                  }`}
+                    }`}
                 >
                   <span>{tab.label}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      statusFilter === tab.id
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${statusFilter === tab.id
                         ? "bg-on-primary/20 text-on-primary"
                         : "bg-surface-container-high text-on-surface-variant"
-                    }`}
+                      }`}
                   >
                     {tab.count}
                   </span>

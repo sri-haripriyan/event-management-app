@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import EventOptions from "./EventOptions.jsx";
 import {
   FiArrowLeft,
   FiCalendar,
@@ -48,6 +47,52 @@ const EventSection = ({ event }) => {
     queryFn: () => getUserEventRequestStatus(event?._id),
     enabled: !!event?._id && !!user,
   });
+
+  const currentUserId = user?._id ? String(user._id) : null;
+  const eventCreatorId = event?.userId?._id
+    ? String(event.userId._id)
+    : event?.userId
+      ? String(event.userId)
+      : null;
+
+  // 1. Creator of THIS event or platform super-admin
+  const isEventCreator = Boolean(
+    currentUserId &&
+    eventCreatorId &&
+    (currentUserId === eventCreatorId || user?.role === "admin")
+  );
+
+  // 2. Sub-event Admin or Moderator for THIS specific event
+  const isSubEventModeratorOrAdmin = Boolean(
+    currentUserId &&
+    Array.isArray(subEventGroups) &&
+    subEventGroups.some((g) => {
+      const groupAdminId = g?.admin?._id
+        ? String(g.admin._id)
+        : g?.admin
+          ? String(g.admin)
+          : null;
+      const isAdm = g?.isAdmin === true || (groupAdminId && groupAdminId === currentUserId);
+      const isMod =
+        g?.isModerator === true ||
+        (Array.isArray(g?.moderators) &&
+          g.moderators.some((m) => {
+            const modId = m?._id ? String(m._id) : m ? String(m) : null;
+            return modId && modId === currentUserId;
+          }));
+      return Boolean(isAdm || isMod);
+    })
+  );
+
+  // Show Organizer Controls strictly only for admins and moderators of THIS event
+  const canManageEvent = Boolean(isEventCreator || isSubEventModeratorOrAdmin);
+
+  // Automatically clear any sub-event selection if user is admin or moderator
+  useEffect(() => {
+    if (canManageEvent && selectedGroupIds.length > 0) {
+      setSelectedGroupIds([]);
+    }
+  }, [canManageEvent, selectedGroupIds.length]);
 
   const getTrackName = (track) => {
     if (!track) return "";
@@ -125,11 +170,28 @@ const EventSection = ({ event }) => {
       }
     }
 
-    const isAvailable = status === "none";
-    const isSelected = groupId ? selectedGroupIds.includes(groupId) : false;
+    const isSpecificMod = Boolean(
+      currentUserId &&
+      (group?.isModerator === true ||
+        (Array.isArray(group?.moderators) &&
+          group.moderators.some((m) => {
+            const modId = m?._id ? String(m._id) : m ? String(m) : null;
+            return modId && modId === currentUserId;
+          })))
+    );
+    const isSpecificAdm = Boolean(
+      currentUserId &&
+      (group?.isAdmin === true ||
+        (group?.admin?._id ? String(group.admin._id) : group?.admin ? String(group.admin) : null) === currentUserId)
+    );
+
+    // Sub-event selection is disabled for event admin and moderators
+    const isAvailable = !canManageEvent && status === "none";
+    const isSelected = !canManageEvent && groupId ? selectedGroupIds.includes(groupId) : false;
 
     return {
       trackName,
+      group,
       groupId,
       limit,
       membersCount,
@@ -137,6 +199,8 @@ const EventSection = ({ event }) => {
       statusLabel,
       isAvailable,
       isSelected,
+      isSpecificMod,
+      isSpecificAdm,
     };
   };
 
@@ -144,6 +208,7 @@ const EventSection = ({ event }) => {
   const nonTechnicalTracks = event?.nonTechnical || [];
 
   const handleToggleTrack = (groupId) => {
+    if (canManageEvent) return;
     if (!user) {
       toast.info("Please login to select sub-events");
       navigate("/login");
@@ -159,6 +224,7 @@ const EventSection = ({ event }) => {
   };
 
   const handleToggleAllInList = (tracks) => {
+    if (canManageEvent) return;
     if (!user) {
       toast.info("Please login to select sub-events");
       navigate("/login");
@@ -295,45 +361,62 @@ const EventSection = ({ event }) => {
       status,
       isAvailable,
       isSelected,
+      isSpecificMod,
     } = getTrackDetails(track);
 
-    const isAlreadyRequested = status === "already requested";
-    const isApproved = status === "approved";
-    const isRejected = status === "rejected";
+    const isAlreadyRequested = !canManageEvent && status === "already requested";
+    const isApproved = !canManageEvent && status === "approved";
+    const isRejected = !canManageEvent && status === "rejected";
 
     return (
       <div
         key={groupId || index}
-        onClick={() => isAvailable && groupId && handleToggleTrack(groupId)}
-        className={`p-3.5 rounded-2xl border transition-all duration-200 select-none flex items-center justify-between gap-3 ${isAlreadyRequested
-          ? "bg-amber-500/10 border-amber-500/25 cursor-not-allowed"
-          : isApproved
-            ? "bg-emerald-500/10 border-emerald-500/25 cursor-not-allowed"
-            : isRejected
-              ? "bg-rose-500/10 border-rose-500/25 cursor-not-allowed opacity-80"
-              : isSelected
-                ? "bg-primary-container/10 border-primary-container ring-2 ring-primary-container/25 shadow-sm cursor-pointer"
-                : "bg-surface-container-low hover:bg-surface-container border-outline-variant/30 hover:border-outline-variant/60 cursor-pointer"
+        onClick={!canManageEvent && isAvailable && groupId ? () => handleToggleTrack(groupId) : undefined}
+        className={`p-3.5 rounded-2xl border transition-all duration-200 select-none flex items-center justify-between gap-3 ${canManageEvent
+          ? "bg-surface-container-low border-outline-variant/30 cursor-default"
+          : isAlreadyRequested
+            ? "bg-amber-500/10 border-amber-500/25 cursor-not-allowed"
+            : isApproved
+              ? "bg-emerald-500/10 border-emerald-500/25 cursor-not-allowed"
+              : isRejected
+                ? "bg-rose-500/10 border-rose-500/25 cursor-not-allowed opacity-80"
+                : isSelected
+                  ? "bg-primary-container/10 border-primary-container ring-2 ring-primary-container/25 shadow-sm cursor-pointer"
+                  : "bg-surface-container-low hover:bg-surface-container border-outline-variant/30 hover:border-outline-variant/60 cursor-pointer"
           }`}
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          {/* Custom Checkbox / Status Icon */}
+          {/* Custom Checkbox / Status Icon / Role Icon */}
           <div
-            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${isAlreadyRequested
-              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
-              : isApproved
-                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                : isRejected
-                  ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
-                  : isSelected
-                    ? "bg-primary-container text-on-primary shadow-sm"
-                    : "border-2 border-outline-variant/60 group-hover:border-primary-container/60 bg-surface-container-lowest"
+            className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${canManageEvent
+              ? isSpecificMod
+                ? "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+                : "bg-surface-container text-on-surface-variant/70"
+              : isAlreadyRequested
+                ? "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                : isApproved
+                  ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                  : isRejected
+                    ? "bg-rose-500/20 text-rose-600 dark:text-rose-400"
+                    : isSelected
+                      ? "bg-primary-container text-on-primary shadow-sm"
+                      : "border-2 border-outline-variant/60 group-hover:border-primary-container/60 bg-surface-container-lowest"
               }`}
           >
-            {isAlreadyRequested && <FiClock size={13} />}
-            {isApproved && <FiCheckCircle size={13} />}
-            {isRejected && <FiXCircle size={13} />}
-            {isAvailable && isSelected && <FiCheck size={13} className="stroke-[3]" />}
+            {canManageEvent ? (
+              isSpecificMod ? (
+                <span className="material-symbols-outlined text-[13px]">shield_person</span>
+              ) : (
+                <FiAward size={13} />
+              )
+            ) : (
+              <>
+                {isAlreadyRequested && <FiClock size={13} />}
+                {isApproved && <FiCheckCircle size={13} />}
+                {isRejected && <FiXCircle size={13} />}
+                {isAvailable && isSelected && <FiCheck size={13} className="stroke-[3]" />}
+              </>
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -346,93 +429,65 @@ const EventSection = ({ event }) => {
                   Capacity:{limit} Seats remaining: {limit - membersCount}
                 </span>
               )}
-              {isAlreadyRequested && (
+              {!canManageEvent && isAlreadyRequested && (
                 <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                   Awaiting review
                 </span>
               )}
-              {isApproved && (
+              {!canManageEvent && isApproved && (
                 <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                   Enrolled member
+                </span>
+              )}
+              {canManageEvent && isSpecificMod && (
+                <span className="text-[11px] text-purple-600 dark:text-purple-400 font-medium">
+                  Assigned Moderator
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Status Pill Badge */}
+        {/* Status Pill Badge / Role Badge */}
         <div className="shrink-0">
-          {isAlreadyRequested && (
-            <span className="bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-              <FiClock size={12} />
-              Already Requested
-            </span>
-          )}
-          {isApproved && (
-            <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-              <FiCheckCircle size={12} />
-              Approved
-            </span>
-          )}
-          {isRejected && (
-            <span className="bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-              <FiXCircle size={12} />
-              Rejected
-            </span>
-          )}
-          {isAvailable && (
-            <span
-              className={`text-xs px-3 py-1 rounded-full font-semibold transition border ${isSelected
-                ? "bg-primary-container text-on-primary border-primary-container shadow-sm"
-                : "bg-surface-container-high/60 text-on-surface-variant border-outline-variant/40 hover:bg-primary-container/10 hover:text-primary-container hover:border-primary-container/30"
-                }`}
-            >
-              {isSelected ? "Selected" : "Select"}
-            </span>
+          {!canManageEvent && (
+            <>
+              {isAlreadyRequested && (
+                <span className="bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <FiClock size={12} />
+                  Already Requested
+                </span>
+              )}
+              {isApproved && (
+                <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <FiCheckCircle size={12} />
+                  Approved
+                </span>
+              )}
+              {isRejected && (
+                <span className="bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <FiXCircle size={12} />
+                  Rejected
+                </span>
+              )}
+              {isAvailable && (
+                <span
+                  className={`text-xs px-3 py-1 rounded-full font-semibold transition border ${isSelected
+                    ? "bg-primary-container text-on-primary border-primary-container shadow-sm"
+                    : "bg-surface-container-high/60 text-on-surface-variant border-outline-variant/40 hover:bg-primary-container/10 hover:text-primary-container hover:border-primary-container/30"
+                    }`}
+                >
+                  {isSelected ? "Selected" : "Select"}
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
     );
   };
 
-  const currentUserId = user?._id ? String(user._id) : null;
-  const eventCreatorId = event?.userId?._id
-    ? String(event.userId._id)
-    : event?.userId
-      ? String(event.userId)
-      : null;
 
-  // 1. Creator of THIS event or platform super-admin
-  const isEventCreator = Boolean(
-    currentUserId &&
-    eventCreatorId &&
-    (currentUserId === eventCreatorId || user?.role === "admin")
-  );
-
-  // 2. Sub-event Admin or Moderator for THIS specific event
-  const isSubEventModeratorOrAdmin = Boolean(
-    currentUserId &&
-    Array.isArray(subEventGroups) &&
-    subEventGroups.some((g) => {
-      const groupAdminId = g?.admin?._id
-        ? String(g.admin._id)
-        : g?.admin
-          ? String(g.admin)
-          : null;
-      const isAdm = g?.isAdmin === true || (groupAdminId && groupAdminId === currentUserId);
-      const isMod =
-        g?.isModerator === true ||
-        (Array.isArray(g?.moderators) &&
-          g.moderators.some((m) => {
-            const modId = m?._id ? String(m._id) : m ? String(m) : null;
-            return modId && modId === currentUserId;
-          }));
-      return Boolean(isAdm || isMod);
-    })
-  );
-
-  // Show Organizer Controls strictly only for admins and moderators of THIS event
-  const canManageEvent = Boolean(isEventCreator || isSubEventModeratorOrAdmin);
 
   return (
     <div className="w-full text-on-surface font-poppins pb-10">
@@ -505,10 +560,12 @@ const EventSection = ({ event }) => {
                   Sub-Events Breakdown
                 </h2>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  Select multiple sub-events to request entry or proceed to registration.
+                  {canManageEvent
+                    ? "Scheduled sub-events and tracks for this event."
+                    : "Select multiple sub-events to request entry or proceed to registration."}
                 </p>
               </div>
-              {selectedGroupIds.length > 0 && (
+              {!canManageEvent && selectedGroupIds.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSelectedGroupIds([])}
@@ -519,20 +576,22 @@ const EventSection = ({ event }) => {
               )}
             </div>
 
-            {/* Instruction banner guiding users to select and join */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-container/10 via-primary-container/5 to-transparent border border-primary-container/20 flex items-start gap-3.5 shadow-sm">
-              <div className="w-9 h-9 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                <FiInfo size={19} />
-              </div>
-              <div className="space-y-1">
-                <h3 className="font-semibold text-sm text-on-surface">
-                  Select and Join Your Sub-Events
-                </h3>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
-                  Browse the tracks below and click on individual blocks in the <strong className="text-primary-container font-semibold">Technical</strong> and <strong className="text-secondary-lumina font-semibold">Non-Technical</strong> containers to select them. You can pick multiple sub-events and {event?.paid ? "proceed to payment" : "send join requests"} at once to secure your spot.
-                </p>
-              </div>
-            </div>
+            {/* Banner: Organizer View vs Attendee Selection Guide */}
+            {!canManageEvent && <>
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-container/10 via-primary-container/5 to-transparent border border-primary-container/20 flex items-start gap-3.5 shadow-sm">
+                <div className="w-9 h-9 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                  <FiInfo size={19} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-sm text-on-surface">
+                    Select and Join Your Sub-Events
+                  </h3>
+                  <p className="text-xs text-on-surface-variant leading-relaxed">
+                    Browse the tracks below and click on individual blocks in the <strong className="text-primary-container font-semibold">Technical</strong> and <strong className="text-secondary-lumina font-semibold">Non-Technical</strong> containers to select them. You can pick multiple sub-events and {event?.paid ? "proceed to payment" : "send join requests"} at once to secure your spot.
+                  </p>
+                </div>
+              </div></>
+            }
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* 1. Technical Events Container */}
@@ -545,10 +604,12 @@ const EventSection = ({ event }) => {
                         <span>Technical Tracks ({technicalTracks.length})</span>
                       </h3>
                       <p className="text-[11px] text-on-surface-variant mt-0.5">
-                        Click blocks below to select technical sub-events
+                        {canManageEvent
+                          ? "Scheduled technical tracks"
+                          : "Click blocks below to select technical sub-events"}
                       </p>
                     </div>
-                    {technicalTracks.length > 0 && (
+                    {technicalTracks.length > 0 && !canManageEvent && (
                       <button
                         type="button"
                         onClick={() => handleToggleAllInList(technicalTracks)}
@@ -583,10 +644,12 @@ const EventSection = ({ event }) => {
                         <span>Non-Technical Tracks ({nonTechnicalTracks.length})</span>
                       </h3>
                       <p className="text-[11px] text-on-surface-variant mt-0.5">
-                        Click blocks below to select non-technical sub-events
+                        {canManageEvent
+                          ? "Scheduled non-technical tracks"
+                          : "Click blocks below to select non-technical sub-events"}
                       </p>
                     </div>
-                    {nonTechnicalTracks.length > 0 && (
+                    {nonTechnicalTracks.length > 0 && !canManageEvent && (
                       <button
                         type="button"
                         onClick={() => handleToggleAllInList(nonTechnicalTracks)}
@@ -612,8 +675,8 @@ const EventSection = ({ event }) => {
               </div>
             </div>
 
-            {/* Inline Action Bar under containers when sub-events are selected */}
-            {selectedGroupIds.length > 0 && (
+            {/* Inline Action Bar under containers when sub-events are selected (Attendees only) */}
+            {!canManageEvent && selectedGroupIds.length > 0 && (
               <div className="p-4 rounded-2xl bg-surface-container-low border border-primary-container/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center font-bold text-base">
