@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
-import { getPanelData } from "../services/api";
+import {
+  getPanelData,
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "../services/api";
 
 const Header = () => {
   const location = useLocation();
@@ -58,6 +63,49 @@ const Header = () => {
     enabled: !!user?._id,
     staleTime: 1000 * 60 * 5,
   });
+
+  const queryClient = useQueryClient();
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const notificationRef = useRef(null);
+
+  // Notifications query & mutations
+  const { data: notificationData } = useQuery({
+    queryKey: ["user-notifications", user?._id],
+    queryFn: getNotifications,
+    enabled: !!user?._id,
+    refetchInterval: 30000,
+  });
+
+  const notifications = notificationData?.notifications || [];
+  const unreadCount = notificationData?.unreadCount ?? notifications.filter((n) => !n.isRead).length;
+
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-notifications", user?._id] });
+    },
+  });
+
+  const markAllMutation = useMutation({
+    mutationFn: markAllNotificationsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-notifications", user?._id] });
+    },
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target)) {
+        setNotificationOpen(false);
+      }
+    };
+    if (notificationOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [notificationOpen]);
 
   const currentUser = panelData?.user || user;
   const avatarUrl =
@@ -140,15 +188,119 @@ const Header = () => {
               </form>
             )}
 
-            {/* Notification Bell */}
-            <button
-              className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
-              type="button"
-              aria-label="Notifications"
-            >
-              <span className="material-symbols-outlined text-xl">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-            </button>
+            {/* Notification Bell with Dropdown */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    navigate("/login");
+                    return;
+                  }
+                  setNotificationOpen((prev) => !prev);
+                }}
+                className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+                type="button"
+                aria-label="Notifications"
+              >
+                <span className="material-symbols-outlined text-xl">notifications</span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
+                )}
+              </button>
+
+              {/* Notification Dropdown Panel */}
+              {notificationOpen && user && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in font-sans">
+                  <div className="p-3.5 border-b border-outline-variant/20 flex items-center justify-between bg-surface-container-low/50">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-lg text-primary-container">notifications</span>
+                      <h4 className="font-semibold text-sm text-on-surface">Notifications</h4>
+                      {unreadCount > 0 && (
+                        <span className="text-[10px] bg-primary-container/15 text-primary-container font-bold px-1.5 py-0.5 rounded-full">
+                          {unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                    {notifications.length > 0 && unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => markAllMutation.mutate()}
+                        className="text-[11px] text-primary-container hover:underline font-medium"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto divide-y divide-outline-variant/10">
+                    {notifications.length === 0 ? (
+                      <div className="py-8 px-4 text-center">
+                        <span className="material-symbols-outlined text-3xl text-on-surface-variant/40 mb-1">
+                          notifications_off
+                        </span>
+                        <p className="text-xs text-on-surface-variant">No notifications yet</p>
+                      </div>
+                    ) : (
+                      notifications.map((item) => (
+                        <div
+                          key={item._id}
+                          onClick={() => {
+                            if (!item.isRead) markReadMutation.mutate(item._id);
+                            if (item.eventId) {
+                              const eId = item.eventId?._id || item.eventId;
+                              navigate(`/events/${eId}`);
+                              setNotificationOpen(false);
+                            }
+                          }}
+                          className={`p-3.5 transition-colors cursor-pointer flex items-start gap-3 hover:bg-surface-container-low ${
+                            !item.isRead ? "bg-primary-container/5" : ""
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                              item.type === "welcome"
+                                ? "bg-indigo-500/15 text-indigo-500"
+                                : item.type === "event_created"
+                                ? "bg-emerald-500/15 text-emerald-500"
+                                : "bg-primary-container/15 text-primary-container"
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-base">
+                              {item.type === "welcome"
+                                ? "celebration"
+                                : item.type === "event_created"
+                                ? "event_available"
+                                : "confirmation_number"}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="text-xs font-semibold text-on-surface truncate">
+                                {item.title}
+                              </p>
+                              {!item.isRead && (
+                                <span className="w-2 h-2 rounded-full bg-primary-container shrink-0"></span>
+                              )}
+                            </div>
+                            <p className="text-[11.5px] text-on-surface-variant line-clamp-2 mt-0.5 leading-relaxed">
+                              {item.message}
+                            </p>
+                            <span className="text-[10px] text-on-surface-variant/60 mt-1 block">
+                              {new Date(item.createdAt).toLocaleDateString(undefined, {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Post an event Button (Only for logged-in users) */}
             {user && (

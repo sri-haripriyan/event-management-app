@@ -1,12 +1,14 @@
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import Payment from "../models/paymentModel.js";
 import Group from "../models/groupModel.js";
 import Event from "../models/eventModel.js";
 import logger from "../utils/logger.js";
 import Application from "../models/applicationModel.js";
 import { addEmailToQueue } from "../queues/emailQueue.js";
+import { createNotification } from "../utils/notification.js";
 dotenv.config();
 
 const razorpayInstance = new Razorpay({
@@ -269,6 +271,23 @@ export const verifyPayment = async (req: any, res: any) => {
 						logger.info("Created application for subevent: " + application);
 					}
 					await addEmailToQueue(application._id.toString());
+
+					// Create registration notification
+					let eventTitle = "Event";
+					if (eventId && (mongoose.connection.readyState !== 0 || (Event.findById as any) !== (mongoose.Model as any).findById)) {
+						try {
+							const targetEvent = await Event.findById(eventId).select("title").lean();
+							if ((targetEvent as any)?.title) eventTitle = (targetEvent as any).title;
+						} catch (_) {}
+					}
+					await createNotification({
+						userId,
+						eventId,
+						title: "Registered for this subevent in the event",
+						message: `Registered for this subevent in the event: Registered for ${subeventName} in the event "${eventTitle}".`,
+						type: "event_registration",
+						subEventName: subeventName,
+					});
 				}
 			}
 

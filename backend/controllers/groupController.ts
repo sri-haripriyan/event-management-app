@@ -8,6 +8,12 @@ import logger from "../utils/logger.js";
 import Application from "../models/applicationModel.js";
 import { addEmailToQueue } from "../queues/emailQueue.js";
 import { ensureApplicationQRCode } from "../utils/ticketQR.js";
+import { createNotification } from "../utils/notification.js";
+
+const getEventTitle = async (eventId: any) => {
+	const event = await Event.findById(eventId).select("title").lean();
+	return (event as any)?.title;
+};
 export const createGroup = async (req, res) => {
 	const { name, eventId, isHead } = req.body;
 
@@ -499,6 +505,17 @@ export const approveRequest = async (req: any, res: any) => {
 				logger.info("Created application for subevent: " + application);
 			}
 			await addEmailToQueue(application._id.toString());
+
+			// Create registration notification
+			const eventTitle = await getEventTitle(group.eventId);
+			await createNotification({
+				userId: joinRequest.user,
+				eventId: group.eventId,
+				title: "Registered for this subevent in the event",
+				message: `Registered for this subevent in the event: Registered for ${subeventName} in the event "${eventTitle}".`,
+				type: "event_registration",
+				subEventName: subeventName,
+			});
 		} else if (targetStatus === "rejected") {
 			joinRequest.status = "rejected";
 			await Promise.all([
@@ -630,6 +647,17 @@ export const joinRequest = async (req: any, res: any) => {
 				io.to(adminSocketId).emit("new_request", { groupId: singleGroupId, userId });
 			}
 
+			// Create registration notification
+			const eventTitle = await getEventTitle(group.eventId);
+			await createNotification({
+				userId,
+				eventId: group.eventId,
+				title: "Registered for this subevent in the event",
+				message: `Registered for this subevent in the event: Registered for ${group.name} in the event "${eventTitle}".`,
+				type: "event_registration",
+				subEventName: group.name,
+			});
+
 			return res.status(200).json({ message: "Request sent successfully" });
 		}
 
@@ -702,6 +730,17 @@ export const joinRequest = async (req: any, res: any) => {
 				if (adminSocketId) {
 					io.to(adminSocketId).emit("new_request", { groupId: gIdStr, userId });
 				}
+
+				// Create registration notification
+				const eventTitle = await getEventTitle(group.eventId);
+				await createNotification({
+					userId,
+					eventId: group.eventId,
+					title: "Registered for this subevent in the event",
+					message: `Registered for this subevent in the event: Registered for ${group.name} in the event "${eventTitle}".`,
+					type: "event_registration",
+					subEventName: group.name,
+				});
 			} catch (dbError: any) {
 				if (dbError.code === 11000 || dbError.name === "MongoServerError") {
 					skipped.push({ groupId: gIdStr, name: group.name, reason: "Join request already exists" });

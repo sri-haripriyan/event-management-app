@@ -12,7 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import Avatar from "../components/Avatar";
 import Spinner from "../components/Spinner";
 import { formatTimestamp } from "../utils/time";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import {
   FiArrowLeft,
   FiCalendar,
@@ -117,7 +117,7 @@ const Request = () => {
     },
     onSuccess: (response, { action }) => {
       toast.success(
-        response?.data?.message || `Join request updated to ${action}ed`
+        response?.data?.message || `Join request updated`
       );
       setLoadingActionId(null);
       if (eventId) {

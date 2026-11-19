@@ -3,7 +3,8 @@ import User from "../models/userModel.js";
 import generateToken from "../utils/generateToken.js";
 import Event from "../models/eventModel.js";
 import Group from "../models/groupModel.js";
-import logger from '../utils/logger.js'
+import logger from '../utils/logger.js';
+import { createNotification } from "../utils/notification.js";
 
 export const signUp = async (req, res) => {
   const { userName, email, password } = req.body;
@@ -27,6 +28,14 @@ export const signUp = async (req, res) => {
     generateToken(res, user._id.toString());
     const savedUser = await user.save();
     if (user) {
+      // Create welcome notification for newly signed up user
+      await createNotification({
+        userId: savedUser._id,
+        title: "Welcome to ACN Events!",
+        message: "Welcome to ACN Events! We're excited to have you on board. Discover events, register for subevents, and connect with communities.",
+        type: "welcome",
+      });
+
       res.status(201).json({
         _id: savedUser._id,
         userName,

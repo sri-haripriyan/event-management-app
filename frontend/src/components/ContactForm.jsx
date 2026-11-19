@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import emailjs from "@emailjs/browser";
 import Spinner from "./Spinner.jsx";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 const ContactForm = () => {
 	const [from_name, setFromName] = useState("");
 	const [from_email, setFromEmail] = useState("");

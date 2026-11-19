@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { formatTimestamp } from "../utils/time";
 import Spinner from "../components/Spinner";
 import { FaBars } from "react-icons/fa";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
   const [conversation, setConversation] = useState([]);

@@ -283,3 +283,15 @@ export const removeModerator = (arg1, arg2) => {
     )
     .then((res) => res.data);
 };
+
+export const getNotifications = () =>
+  axios.get(`${BASE_URL}/api/notifications`, { withCredentials: true }).then((res) => res.data);
+
+export const markNotificationRead = (id) =>
+  axios.patch(`${BASE_URL}/api/notifications/${id}/read`, {}, { withCredentials: true }).then((res) => res.data);
+
+export const markAllNotificationsRead = () =>
+  axios.patch(`${BASE_URL}/api/notifications/read-all`, {}, { withCredentials: true }).then((res) => res.data);
+
+export const deleteNotification = (id) =>
+  axios.delete(`${BASE_URL}/api/notifications/${id}`, { withCredentials: true }).then((res) => res.data);

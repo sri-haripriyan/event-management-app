@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createEvent, updateEvent } from "../../services/api";
 import { useAuth } from "../../hooks/useAuth.jsx";

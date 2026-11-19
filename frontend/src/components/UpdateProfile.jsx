@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { updateProfile } from "../services/api";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 const UpdateProfile = ({ user, close }) => {
 	const { setUser } = useAuth();

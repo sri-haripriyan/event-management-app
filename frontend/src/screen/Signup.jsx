@@ -6,7 +6,7 @@ import { useAuth } from "../hooks/useAuth.jsx";
 import Spinner from "../components/Spinner.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
 import PersonalDataModal from "../components/PersonalDataModal.jsx";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 const Signup = () => {
   const navigate = useNavigate();

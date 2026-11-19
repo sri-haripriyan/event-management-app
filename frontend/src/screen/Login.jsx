@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { logindata } from "../services/api.js";
 import { useAuth } from "../hooks/useAuth.jsx";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import Spinner from "../components/Spinner.jsx";
 import PasswordInput from "../components/PasswordInput.jsx";
 

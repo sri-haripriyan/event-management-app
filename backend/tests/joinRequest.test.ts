@@ -50,6 +50,11 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
   (User as any).findOneAndUpdate = () => Promise.resolve({});
   (Application as any).findOne = () => Promise.resolve(null);
   (Application as any).create = () => Promise.resolve({ _id: "mockApp" });
+  (Event as any).findById = () => ({
+    select: () => ({
+      lean: () => Promise.resolve({ _id: mockEventId, title: "Tech Fest 2026" }),
+    }),
+  });
 
   test("1. Returns 400 if groupId is missing in joinRequest", async () => {
     const { req, res } = createMockReqRes({}, {}, { _id: mockUserId });
