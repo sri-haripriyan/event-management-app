@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { getEventAttendance, markEventAttendance, getGroupByEventId } from "../services/api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";

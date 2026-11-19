@@ -28,7 +28,7 @@ import {
   getUserEventRequestStatus,
   bulkJoinRequest,
 } from "../services/api";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 
 const EventSection = ({ event }) => {
   const navigate = useNavigate();
@@ -134,7 +134,7 @@ const EventSection = ({ event }) => {
       const apiStatus = requestStatusData.statusMap[groupId];
       if (apiStatus === "already requested" || apiStatus === "pending") {
         status = "already requested";
-        statusLabel = "Already Requested";
+        statusLabel = "Awaiting Review";
       } else if (apiStatus === "approved") {
         status = "approved";
         statusLabel = "Approved";
@@ -149,7 +149,7 @@ const EventSection = ({ event }) => {
       if (match) {
         if (match.status === "already requested" || match.status === "pending") {
           status = "already requested";
-          statusLabel = "Already Requested";
+          statusLabel = "Awaiting Review";
         } else if (match.status === "approved") {
           status = "approved";
           statusLabel = "Approved";
@@ -167,7 +167,7 @@ const EventSection = ({ event }) => {
         group.requestStatus === "pending"
       ) {
         status = "already requested";
-        statusLabel = "Already Requested";
+        statusLabel = "Awaiting Review";
       } else if (group.requestStatus === "rejected") {
         status = "rejected";
         statusLabel = "Rejected";
@@ -438,7 +438,7 @@ const EventSection = ({ event }) => {
               )}
               {!canManageEvent && isAlreadyRequested && (
                 <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                  Awaiting review
+                  Awaiting Review
                 </span>
               )}
               {!canManageEvent && isApproved && (
@@ -459,12 +459,6 @@ const EventSection = ({ event }) => {
         <div className="shrink-0">
           {!canManageEvent && (
             <>
-              {isAlreadyRequested && (
-                <span className="bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
-                  <FiClock size={12} />
-                  Already Requested
-                </span>
-              )}
               {isApproved && (
                 <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-semibold flex items-center gap-1">
                   <FiCheckCircle size={12} />
@@ -572,15 +566,7 @@ const EventSection = ({ event }) => {
                     : "Select multiple sub-events to request entry or proceed to registration."}
                 </p>
               </div>
-              {!canManageEvent && selectedGroupIds.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedGroupIds([])}
-                  className="text-xs text-rose-500 hover:underline font-semibold"
-                >
-                  Clear Selection ({selectedGroupIds.length})
-                </button>
-              )}
+
             </div>
 
             {/* Banner: Organizer View vs Attendee Selection Guide */}
@@ -683,7 +669,7 @@ const EventSection = ({ event }) => {
             </div>
 
             {/* Inline Action Bar under containers when sub-events are selected (Attendees only) */}
-            {!canManageEvent && selectedGroupIds.length > 0 && (
+            {/* {!canManageEvent && selectedGroupIds.length > 0 && (
               <div className="p-4 rounded-2xl bg-surface-container-low border border-primary-container/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-fade-in">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary-container/15 text-primary-container flex items-center justify-center font-bold text-base">
@@ -696,7 +682,7 @@ const EventSection = ({ event }) => {
                     </h4>
                     <p className="text-xs text-on-surface-variant">
                       {event?.paid
-                        ? "Click below to proceed to the payment checkout."
+                        ? "Click to proceed to the payment checkout."
                         : "Click below to send join requests to the organizers."}
                     </p>
                   </div>
@@ -726,7 +712,7 @@ const EventSection = ({ event }) => {
                   )}
                 </button>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Organizer Info */}
@@ -776,11 +762,7 @@ const EventSection = ({ event }) => {
                 <span className="text-3xl font-extrabold text-on-surface">
                   {event?.paid ? `₹${event?.amount}` : "Free Entry"}
                 </span>
-                {event?.paid && (
-                  <span className="text-xs text-primary-container bg-primary-container/10 px-2.5 py-0.5 rounded-full border border-primary-container/20 font-semibold">
-                    Paid
-                  </span>
-                )}
+
               </div>
             </div>
 
@@ -863,13 +845,7 @@ const EventSection = ({ event }) => {
                   <div className="flex flex-col gap-2 p-3 rounded-2xl bg-surface-container-low border border-primary-container/25">
                     <div className="flex items-center justify-between text-xs font-semibold text-primary-container">
                       <span>{selectedGroupIds.length} Selected:</span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedGroupIds([])}
-                        className="text-on-surface-variant/70 hover:text-rose-500 transition"
-                      >
-                        Clear
-                      </button>
+
                     </div>
                     <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto attendance-scrollbar">
                       {selectedTrackNames.map((name, i) => (
@@ -898,7 +874,7 @@ const EventSection = ({ event }) => {
                 )}
 
                 {/* Action button: Paid vs Free */}
-                {event?.paid ? (
+                {selectedGroupIds.length !== 0 ? event?.paid ? (
                   <button
                     type="button"
                     onClick={handlePaidProceed}
@@ -941,7 +917,7 @@ const EventSection = ({ event }) => {
                       "Select Sub-Events to Request"
                     )}
                   </button>
-                )}
+                ) : ""}
 
                 {/* Banner when all sub-events have been requested */}
                 {allAlreadyRequested && (

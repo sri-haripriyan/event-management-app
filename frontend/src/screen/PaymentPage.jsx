@@ -25,7 +25,7 @@ import {
   FiShoppingBag,
 } from "react-icons/fi";
 import { TiTick } from "react-icons/ti";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth.jsx";
 import Spinner from "../components/Spinner.jsx";
 
@@ -35,6 +35,14 @@ const PaymentPage = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(`/events/${params.eventId}`);
+    }
+  };
 
   // Parse initial selected sub-events from URL query parameters or location state
   const parseInitialGroupIds = () => {

@@ -4,6 +4,7 @@ import Group from "../models/groupModel.js";
 import logger from "../utils/logger.js";
 import { ID } from "node-appwrite";
 import { storage, bucketId, projectId, endpoint } from "../configs/appwrite.js";
+import { createNotification } from "../utils/notification.js";
 
 export const createEvent = async (req, res) => {
   try {
@@ -71,6 +72,15 @@ export const createEvent = async (req, res) => {
       new Group(headGroup).save(),
     ]).catch((err) => {
       throw err;
+    });
+
+    // Create notification for event creator
+    await createNotification({
+      userId: newEvent.userId,
+      eventId: newEvent._id,
+      title: "Event Created",
+      message: `You created event "${newEvent.title}". Manage tracks, view registrations, and coordinate attendance.`,
+      type: "event_created",
     });
 
     res.status(201).json({ message: "event created", data: newEvent });

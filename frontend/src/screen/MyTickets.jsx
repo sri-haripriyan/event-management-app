@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { getPanelData } from "../services/api";
 import { getTicketStatus } from "../utils/ticketUtils";

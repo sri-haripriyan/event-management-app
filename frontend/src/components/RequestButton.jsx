@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getGroupByEventId, getUserEventRequestStatus, bulkJoinRequest } from "../services/api";
 import { useAuth } from "../hooks/useAuth.jsx";
 import Spinner from "./Spinner";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import {
   FiCheck,
   FiClock,

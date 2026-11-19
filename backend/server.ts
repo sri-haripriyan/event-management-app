@@ -15,6 +15,7 @@ import likeRoutes from "./routes/likeRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import ticketRoutes from "./routes/ticketRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 import connectDB from "./configs/connectDB.js";
 import { app, server, io } from "./socket/socket.js";
@@ -89,6 +90,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/like", likeRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/attendance", ticketRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/notification", notificationRoutes);
 
 // Error Handling
 app.use((err, req, res, next) => {

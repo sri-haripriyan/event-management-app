@@ -1,6 +1,6 @@
 import { useState } from "react";
 import GroupSection from "./GroupSection";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { addModerator, getgroupInfo } from "../services/api";
 

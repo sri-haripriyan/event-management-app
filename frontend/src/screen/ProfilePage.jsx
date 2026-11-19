@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "react-toastify";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { getPanelData, uploadImage, signout } from "../services/api";
 import ImageCropModal from "../components/ImageCropModal";
