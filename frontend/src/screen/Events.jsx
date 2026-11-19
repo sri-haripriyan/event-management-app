@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
 import EventList from "../components/EventList";
 import ScrollToTop from "../components/ScrollToTop";
 import PersonalDataModal from "../components/PersonalDataModal";
@@ -54,8 +53,6 @@ const Events = () => {
         onClose={handleCloseModal}
         onSaved={handleCloseModal}
       />
-
-			<ToastContainer />
 		</div>
 	);
 };

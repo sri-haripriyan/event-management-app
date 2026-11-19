@@ -1,5 +1,4 @@
 import { lazy, useState } from "react";
-import { ToastContainer } from "react-toastify";
 import { LuCircleArrowLeft } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 const MyGroups = lazy(() => import("../components/MyGroups"));
@@ -49,7 +48,6 @@ export default function Dashboard() {
 				{activeTab === "/tab=groups" && <MyGroups />}
 				{activeTab === "/tab=requests" && <RequestComponent />}
 			</div>
-			<ToastContainer />
 		</div>
 	);
 }

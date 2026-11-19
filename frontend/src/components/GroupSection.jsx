@@ -6,6 +6,7 @@ const GroupSection = ({
   handleClick,
   setModEmail,
   modEmail,
+  isAdmin = false,
 }) => {
   const handleChange = (e) => {
     setModEmail(e.target.value);
@@ -14,7 +15,7 @@ const GroupSection = ({
     <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl text-sm w-full text-on-surface my-2">
       <div className="border-b border-outline-variant/30 flex flex-col md:flex-row justify-between items-center p-3">
         <h5 className="font-semibold">{title}</h5>
-        {title === "Moderators" && (
+        {title === "Moderators" && isAdmin && (
           <form onSubmit={handleClick} className="flex gap-2 w-full md:w-2/3 mt-2 md:mt-0">
             <input
               type="email"

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import {
   FiArrowLeft,
   FiEdit2,
@@ -62,7 +62,7 @@ const ManageEvent = () => {
     enabled: !!currentEventId,
   });
 
-  // Authorization check
+  // Authorization checks
   const currentUserId = user?._id ? String(user._id) : null;
   const eventCreatorId = event?.userId?._id
     ? String(event.userId._id)
@@ -70,10 +70,40 @@ const ManageEvent = () => {
       ? String(event.userId)
       : null;
 
-  const isEventCreator = Boolean(
+  // Event Host / Admin (creator, platform admin, or group admin)
+  const isEventAdmin = Boolean(
     currentUserId &&
-    (currentUserId === eventCreatorId || user?.role === "admin")
+    (currentUserId === eventCreatorId ||
+      user?.role === "admin" ||
+      (Array.isArray(subEventGroups) &&
+        subEventGroups.some((g) => {
+          const groupAdminId = g?.admin?._id
+            ? String(g.admin._id)
+            : g?.admin
+              ? String(g.admin)
+              : null;
+          return groupAdminId && groupAdminId === currentUserId;
+        })))
   );
+
+  // Check if user is a moderator of ANY sub-event in this event
+  const isSubEventModerator = Boolean(
+    currentUserId &&
+    Array.isArray(subEventGroups) &&
+    subEventGroups.some((g) => {
+      const isMod =
+        g?.isModerator === true ||
+        (Array.isArray(g?.moderators) &&
+          g.moderators.some((m) => {
+            const modId = m?._id ? String(m._id) : m ? String(m) : null;
+            return modId && modId === currentUserId;
+          }));
+      return Boolean(isMod);
+    })
+  );
+
+  // Users permitted to access the settings page: Event Admin or Sub-Event Moderator
+  const canAccessSettings = Boolean(isEventAdmin || isSubEventModerator);
 
   // Filter sub-events (exclude head group)
   const tracks = (subEventGroups || []).filter((g) => !g.isHead);
@@ -116,6 +146,7 @@ const ManageEvent = () => {
   });
 
   const openAddModal = (subEvent) => {
+    if (!isEventAdmin) return;
     setSelectedSubEvent(subEvent);
     setModeratorEmail("");
     setModalError("");
@@ -129,6 +160,10 @@ const ManageEvent = () => {
 
   const handleAddModeratorSubmit = (e) => {
     e.preventDefault();
+    if (!isEventAdmin) {
+      setModalError("Only event admin can add moderators.");
+      return;
+    }
     if (!selectedSubEvent || !moderatorEmail.trim()) {
       setModalError("Please enter a valid email address.");
       return;
@@ -141,7 +176,7 @@ const ManageEvent = () => {
   };
 
   const confirmRemoveModerator = () => {
-    if (!removeTarget) return;
+    if (!isEventAdmin || !removeTarget) return;
     const { subEvent, moderator } = removeTarget;
     const groupId = subEvent?._id || subEvent?.id;
     const moderatorId = moderator?._id || moderator;
@@ -182,6 +217,24 @@ const ManageEvent = () => {
     );
   }
 
+  if (event && !canAccessSettings) {
+    return (
+      <div className="w-full min-h-screen bg-surface flex flex-col items-center justify-center p-6 text-center font-poppins pt-16">
+        <FiAlertCircle className="text-5xl text-red-500 mb-3" />
+        <h2 className="text-2xl font-bold text-on-surface">Access Denied</h2>
+        <p className="text-on-surface-variant mt-1 text-sm max-w-md">
+          You are not authorized to view the settings for this event. Only the event host and assigned moderators can access this page.
+        </p>
+        <Link
+          to={`/events/${currentEventId}`}
+          className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-semibold text-sm hover:brightness-110 transition shadow-sm"
+        >
+          <FiArrowLeft /> Back to Event
+        </Link>
+      </div>
+    );
+  }
+
   const handleBack = () => {
     if (window.history.state && window.history.state.idx > 0) {
       navigate(-1);
@@ -192,7 +245,6 @@ const ManageEvent = () => {
 
   return (
     <div className="w-full min-h-screen bg-surface text-on-surface font-poppins pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-      <ToastContainer />
       <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
         {/* Top Navigation & Breadcrumbs */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-outline-variant/20 pb-4">
@@ -284,13 +336,15 @@ const ManageEvent = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row md:flex-col gap-2 w-full md:w-auto shrink-0">
-            <button
-              onClick={() => navigate(`/events/${currentEventId}/edit`)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-semibold text-xs sm:text-sm shadow-sm hover:brightness-110 transition active:scale-95"
-            >
-              <FiEdit2 size={16} />
-              <span>Edit event information</span>
-            </button>
+            {isEventAdmin && (
+              <button
+                onClick={() => navigate(`/events/${currentEventId}/edit`)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary-container font-semibold text-xs sm:text-sm shadow-sm hover:brightness-110 transition active:scale-95"
+              >
+                <FiEdit2 size={16} />
+                <span>Edit event information</span>
+              </button>
+            )}
             {!event?.paid && (
               <button
                 onClick={() => navigate(`/events/${currentEventId}/requests`)}
@@ -312,7 +366,9 @@ const ManageEvent = () => {
                 <span>Sub-events & Moderators</span>
               </h2>
               <p className="text-xs text-on-surface-variant mt-0.5">
-                Assign moderators to specific sub-event tracks to help oversee check-ins and member requests.
+                {isEventAdmin
+                  ? "Assign moderators to specific sub-event tracks to help oversee check-ins and member requests."
+                  : "View assigned moderators for each sub-event track."}
               </p>
             </div>
             <div className="text-xs text-on-surface-variant font-medium">
@@ -327,12 +383,14 @@ const ManageEvent = () => {
               <p className="text-xs text-on-surface-variant max-w-md mx-auto">
                 This event does not have any sub-events created yet. You can add technical or non-technical sub-events by editing the event.
               </p>
-              <button
-                onClick={() => navigate(`/events/${currentEventId}/edit`)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-container text-on-primary-container font-semibold text-xs shadow-sm hover:brightness-110 transition active:scale-95"
-              >
-                <FiEdit2 size={14} /> Add Sub-events
-              </button>
+              {isEventAdmin && (
+                <button
+                  onClick={() => navigate(`/events/${currentEventId}/edit`)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary-container text-on-primary-container font-semibold text-xs shadow-sm hover:brightness-110 transition active:scale-95"
+                >
+                  <FiEdit2 size={14} /> Add Sub-events
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
@@ -377,13 +435,15 @@ const ManageEvent = () => {
                       </div>
 
                       {/* Add Moderator Button */}
-                      <button
-                        onClick={() => openAddModal(subEvent)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary-container font-semibold text-xs shadow-sm hover:brightness-110 transition active:scale-95"
-                      >
-                        <FiUserPlus size={15} />
-                        <span>Add Moderator</span>
-                      </button>
+                      {isEventAdmin && (
+                        <button
+                          onClick={() => openAddModal(subEvent)}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary-container text-on-primary-container font-semibold text-xs shadow-sm hover:brightness-110 transition active:scale-95"
+                        >
+                          <FiUserPlus size={15} />
+                          <span>Add Moderator</span>
+                        </button>
+                      )}
                     </div>
 
                     {/* Moderators Table */}
@@ -395,7 +455,7 @@ const ManageEvent = () => {
                             <th className="py-3 px-5">Email</th>
                             <th className="py-3 px-5">Phone</th>
                             <th className="py-3 px-5">Role / Status</th>
-                            <th className="py-3 px-5 text-right">Actions</th>
+                            {isEventAdmin && <th className="py-3 px-5 text-right">Actions</th>}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/15">
@@ -456,27 +516,29 @@ const ManageEvent = () => {
                                   </td>
 
                                   {/* Action */}
-                                  <td className="py-3 px-5 text-right whitespace-nowrap">
-                                    <button
-                                      onClick={() =>
-                                        setRemoveTarget({
-                                          subEvent,
-                                          moderator: modObj,
-                                        })
-                                      }
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-500/10 font-medium transition active:scale-95 text-xs"
-                                      title="Remove moderator"
-                                    >
-                                      <FiTrash2 size={13} />
-                                      <span>Remove</span>
-                                    </button>
-                                  </td>
+                                  {isEventAdmin && (
+                                    <td className="py-3 px-5 text-right whitespace-nowrap">
+                                      <button
+                                        onClick={() =>
+                                          setRemoveTarget({
+                                            subEvent,
+                                            moderator: modObj,
+                                          })
+                                        }
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-500/10 font-medium transition active:scale-95 text-xs"
+                                        title="Remove moderator"
+                                      >
+                                        <FiTrash2 size={13} />
+                                        <span>Remove</span>
+                                      </button>
+                                    </td>
+                                  )}
                                 </tr>
                               );
                             })
                           ) : (
                             <tr>
-                              <td colSpan={5} className="py-8 px-5 text-center">
+                              <td colSpan={isEventAdmin ? 5 : 4} className="py-8 px-5 text-center">
                                 <div className="flex flex-col items-center justify-center space-y-2">
                                   <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant/60">
                                     <FiUser size={18} />
@@ -484,12 +546,14 @@ const ManageEvent = () => {
                                   <p className="text-xs font-medium text-on-surface-variant">
                                     No moderators assigned to <span className="font-semibold text-on-surface">{subEvent.name}</span> yet.
                                   </p>
-                                  <button
-                                    onClick={() => openAddModal(subEvent)}
-                                    className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-xs font-semibold text-primary-container transition active:scale-95"
-                                  >
-                                    <FiUserPlus size={14} /> Assign First Moderator
-                                  </button>
+                                  {isEventAdmin && (
+                                    <button
+                                      onClick={() => openAddModal(subEvent)}
+                                      className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-xs font-semibold text-primary-container transition active:scale-95"
+                                    >
+                                      <FiUserPlus size={14} /> Assign First Moderator
+                                    </button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -508,7 +572,7 @@ const ManageEvent = () => {
       {/* ========================================================================= */}
       {/* ADD MODERATOR MODAL */}
       {/* ========================================================================= */}
-      {selectedSubEvent && (
+      {isEventAdmin && selectedSubEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div
             className="w-full max-w-lg bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-2xl overflow-hidden animate-scale-up"
@@ -621,7 +685,7 @@ const ManageEvent = () => {
       {/* ========================================================================= */}
       {/* REMOVE MODERATOR CONFIRMATION MODAL */}
       {/* ========================================================================= */}
-      {removeTarget && (
+      {isEventAdmin && removeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
           <div
             className="w-full max-w-md bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-2xl p-6 space-y-4 animate-scale-up"

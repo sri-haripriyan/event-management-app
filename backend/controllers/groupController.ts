@@ -57,9 +57,16 @@ export const addModerator = async (req: any, res: any) => {
 
 		if (!group) return res.status(404).json({ message: "Sub-event group not found" });
 
-		const isCreator = group.admin.equals(req.user._id);
+		const isCreator = group.admin && group.admin.equals(req.user._id);
+		let isEventAdmin = isCreator;
+		if (!isEventAdmin && group.eventId) {
+			const eventObj = await Event.findById(group.eventId);
+			if (eventObj?.userId && (eventObj.userId._id || eventObj.userId).toString() === req.user._id.toString()) {
+				isEventAdmin = true;
+			}
+		}
 		const isSuperAdmin = req.user?.role === "admin";
-		if (!isCreator && !isSuperAdmin) {
+		if (!isEventAdmin && !isSuperAdmin) {
 			return res.status(403).json({ message: "Only event admin can add moderators" });
 		}
 
@@ -161,8 +168,16 @@ export const removeModerator = async (req: any, res: any) => {
 		const group = await Group.findById(groupId);
 		if (!group) return res.status(404).json({ message: "Sub-event group not found" });
 
-		const isCreator = group.admin.equals(req.user._id);
-		if (!isCreator) {
+		const isCreator = group.admin && group.admin.equals(req.user._id);
+		let isEventAdmin = isCreator;
+		if (!isEventAdmin && group.eventId) {
+			const eventObj = await Event.findById(group.eventId);
+			if (eventObj?.userId && (eventObj.userId._id || eventObj.userId).toString() === req.user._id.toString()) {
+				isEventAdmin = true;
+			}
+		}
+		const isSuperAdmin = req.user?.role === "admin";
+		if (!isEventAdmin && !isSuperAdmin) {
 			return res.status(403).json({ message: "Only event admin can remove moderators" });
 		}
 

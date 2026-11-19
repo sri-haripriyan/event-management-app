@@ -1160,6 +1160,27 @@ describe("JoinRequest Duplicate Prevention & Status Display Unit Tests", () => {
       assert.equal(resRem.statusCode, 200);
       assert.equal(removedMod, true);
       assert.match(resRem.jsonData.message, /moderator removed successfully/i);
+
+      // 3. Subevent moderator attempts to add moderator -> 403 Forbidden
+      const mockModId = new mongoose.Types.ObjectId();
+      const { req: reqModAdd, res: resModAdd } = createMockReqRes(
+        { groupId: mockGroupId.toString(), email: "eligible@example.com" },
+        {},
+        { _id: mockModId, role: "user" }
+      );
+      await addModerator(reqModAdd, resModAdd);
+      assert.equal(resModAdd.statusCode, 403);
+      assert.match(resModAdd.jsonData.message, /only event admin can add moderators/i);
+
+      // 4. Subevent moderator attempts to remove moderator -> 403 Forbidden
+      const { req: reqModRem, res: resModRem } = createMockReqRes(
+        { groupId: mockGroupId.toString(), moderatorId: mockUserId.toString() },
+        {},
+        { _id: mockModId, role: "user" }
+      );
+      await removeModerator(reqModRem, resModRem);
+      assert.equal(resModRem.statusCode, 403);
+      assert.match(resModRem.jsonData.message, /only event admin can remove moderators/i);
     } finally {
       Group.findById = origGroupFindById;
       User.findOne = origUserFindOne;
