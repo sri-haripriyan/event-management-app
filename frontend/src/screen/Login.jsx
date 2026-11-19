@@ -27,7 +27,12 @@ const Login = () => {
       navigate(from, { replace: true, state: { fromLogin: true } });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || error.message);
+      const msg =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Login failed. Please check your credentials.";
+      toast.error(msg);
     },
   });
   const [userName, setuserName] = useState("");
@@ -35,8 +40,6 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     mutate({ userName, password });
-    setuserName("");
-    setPassword("");
   };
 
   return (

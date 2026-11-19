@@ -2,7 +2,6 @@ import { lazy } from "react";
 import { useParams } from "react-router-dom";
 import { Fetchevent } from "../services/api";
 import { useQuery } from "@tanstack/react-query";
-import { ToastContainer } from "react-toastify";
 
 const CommentSection = lazy(() => import("../components/CommentSection"));
 const EventSection = lazy(() => import("../components/EventSection"));
@@ -28,7 +27,6 @@ const Event = () => {
 				<div className="animate-fade-in pt-16">
 					<EventSection event={event} />
 					<CommentSection eventId={eventId} event={event} />
-					<ToastContainer />
 				</div>
 			)}
 		</div>

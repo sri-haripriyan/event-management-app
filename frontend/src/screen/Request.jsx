@@ -326,16 +326,7 @@ const Request = () => {
           </div>
         </div>
 
-        {eventId && (
-          <Link
-            to={`/events/${eventId}`}
-            replace
-            className="text-xs font-semibold text-primary-container hover:underline flex items-center gap-1.5 bg-primary-container/10 px-3.5 py-1.5 rounded-full border border-primary-container/20 shadow-sm"
-          >
-            <span>View Public Event</span>
-            <FiExternalLink size={13} />
-          </Link>
-        )}
+
       </div>
 
       <div className="max-w-7xl mx-auto mt-6 space-y-6">
@@ -429,15 +420,15 @@ const Request = () => {
                   key={tab.id}
                   onClick={() => setStatusFilter(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 ${statusFilter === tab.id
-                      ? "bg-primary-container text-on-primary shadow-sm"
-                      : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+                    ? "bg-primary-container text-on-primary shadow-sm"
+                    : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
                     }`}
                 >
                   <span>{tab.label}</span>
                   <span
                     className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${statusFilter === tab.id
-                        ? "bg-on-primary/20 text-on-primary"
-                        : "bg-surface-container-high text-on-surface-variant"
+                      ? "bg-on-primary/20 text-on-primary"
+                      : "bg-surface-container-high text-on-surface-variant"
                       }`}
                   >
                     {tab.count}
@@ -591,7 +582,7 @@ const Request = () => {
                               {group?.limit && (
                                 <span className="text-[10px] text-on-surface-variant">
                                   Capacity: {
-                                    groupsData?.groups?.find((g) => (g?._id || g)?.toString() === (group?._id || group)?.toString())?.membersCount ??
+                                    availableGroups?.find((g) => (g?._id || g)?.toString() === (group?._id || group)?.toString())?.membersCount ??
                                     group?.membersCount ??
                                     0
                                   }/{group.limit}

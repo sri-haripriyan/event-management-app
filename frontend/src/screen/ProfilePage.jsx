@@ -369,7 +369,7 @@ const ProfilePage = () => {
                 <button
                   onClick={handleLogout}
                   disabled={isLoggingOut}
-                  className="mt-space-lg w-full flex items-center justify-center gap-space-xs py-2.5 px-4 rounded-lg bg-red-50 hover:text-red-800 text-red-600 hover:text-white font-label-md text-label-md transition-all duration-200 active:scale-[0.98] border border-red-200 hover:border-red-600 hover:shadow-sm hover:shadow-red-500/20 disabled:opacity-50"
+                  className="mt-space-lg w-full flex items-center justify-center gap-space-xs py-2.5 px-4 rounded-lg bg-red-50 hover:text-red-800 text-red-600 font-label-md text-label-md transition-all duration-200 active:scale-[0.98] border border-red-200 hover:border-red-600 hover:shadow-sm hover:shadow-red-500/20 disabled:opacity-50"
                   type="button"
                 >
                   {isLoggingOut ? (

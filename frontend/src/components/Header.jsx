@@ -10,6 +10,7 @@ const Header = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isEventsPage = location.pathname === "/events";
   const [internalSearchValue, setInternalSearchValue] = useState(
     searchParams.get("search") || ""
   );
@@ -123,19 +124,21 @@ const Header = () => {
 
           {/* Right Header Elements */}
           <div className="flex items-center gap-space-md">
-            {/* Search Input */}
-            <form onSubmit={handleSearchSubmit} className="relative hidden sm:flex items-center">
-              <span className="material-symbols-outlined absolute left-3 text-outline pointer-events-none text-lg">
-                search
-              </span>
-              <input
-                value={internalSearchValue}
-                onChange={handleSearchChange}
-                className="w-56 md:w-64 pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest transition-all border border-transparent focus:border-outline-variant"
-                placeholder="Search events, spaces, organizers..."
-                type="text"
-              />
-            </form>
+            {/* Search Input (Only on /events) */}
+            {isEventsPage && (
+              <form onSubmit={handleSearchSubmit} className="relative hidden sm:flex items-center">
+                <span className="material-symbols-outlined absolute left-3 text-outline pointer-events-none text-lg">
+                  search
+                </span>
+                <input
+                  value={internalSearchValue}
+                  onChange={handleSearchChange}
+                  className="w-56 md:w-64 pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:ring-0 border-none"
+                  placeholder="Search events, spaces, organizers..."
+                  type="text"
+                />
+              </form>
+            )}
 
             {/* Notification Bell */}
             <button
@@ -210,19 +213,21 @@ const Header = () => {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 top-16 z-40 bg-surface/95 backdrop-blur-xl border-b border-surface-container-high p-6 flex flex-col gap-6 lg:hidden animate-fade-in shadow-xl">
-          {/* Mobile Search */}
-          <form onSubmit={handleSearchSubmit} className="relative w-full">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg">
-              search
-            </span>
-            <input
-              value={internalSearchValue}
-              onChange={handleSearchChange}
-              className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm active:outline-none focus:outline-none border border-outline-variant/30"
-              placeholder="Search events, spaces, organizers..."
-              type="text"
-            />
-          </form>
+          {/* Mobile Search (Only on /events) */}
+          {isEventsPage && (
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-lg">
+                search
+              </span>
+              <input
+                value={internalSearchValue}
+                onChange={handleSearchChange}
+                className="w-full pl-9 pr-3 py-2 bg-surface-container-low rounded-lg text-on-surface placeholder:text-outline font-body-sm text-body-sm focus:outline-none focus:ring-0 border-none"
+                placeholder="Search events, spaces, organizers..."
+                type="text"
+              />
+            </form>
+          )}
 
           {/* Mobile Navigation Links */}
           <nav className="flex flex-col gap-2">

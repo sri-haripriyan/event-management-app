@@ -3,12 +3,13 @@ import Avatar from "../components/Avatar";
 import { useSocketContext } from "../context/socketContext";
 import { VscSend } from "react-icons/vsc";
 import { getRandomColor } from "../utils/color";
-import { fetchChat, getgroupInfo } from "../services/api";
+import { fetchChat, getgroupInfo, sendMessage } from "../services/api";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import { formatTimestamp } from "../utils/time";
 import Spinner from "../components/Spinner";
 import { FaBars } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
   const [conversation, setConversation] = useState([]);
@@ -46,7 +47,14 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
     socket.emit("joinRoom", groupid);
 
     socket.on("newMessage", (message) => {
-      setConversation((prevMessages) => [...prevMessages, message]);
+      if (!message) return;
+      setConversation((prevMessages) => {
+        const list = Array.isArray(prevMessages) ? prevMessages : [];
+        if (message._id && list.some((m) => m?._id === message._id)) {
+          return list;
+        }
+        return [...list, message];
+      });
     });
 
     return () => {
@@ -60,19 +68,27 @@ const GroupChatSection = ({ selectedGroup, toggleSidebar }) => {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput || !groupid) return;
     setPending(true);
-    const res = await fetch("/api/message/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ message: input, groupId: groupid }),
-    });
-
-    const data = await res.json();
-    socket.emit("newMessage", data);
-    setInput("");
-    setPending(false);
+    try {
+      const res = await sendMessage(trimmedInput, groupid);
+      const data = res?.data;
+      if (socket && data) {
+        socket.emit("newMessage", data);
+      }
+      setInput("");
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      toast.error(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to send message"
+      );
+    } finally {
+      setPending(false);
+    }
   };
 
   return (

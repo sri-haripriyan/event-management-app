@@ -1,7 +1,11 @@
 import { useState } from "react";
 import GroupSection from "./GroupSection";
 import { toast } from "react-toastify";
+import { useAuth } from "../hooks/useAuth.jsx";
+import { addModerator, getgroupInfo } from "../services/api";
+
 const GroupDetails = ({ group }) => {
+  const { user } = useAuth();
   const groupId = group._id;
   const [loading, setLoading] = useState(false);
   const [mods, setMods] = useState([...group.moderators]);
@@ -9,26 +13,27 @@ const GroupDetails = ({ group }) => {
   const [members, setMembers] = useState([...group.members]);
   const [modEmail, setModEmail] = useState("");
 
+  const currentUserId = user?._id ? String(user._id) : null;
+  const groupAdminId = group?.admin?._id
+    ? String(group.admin._id)
+    : group?.admin
+      ? String(group.admin)
+      : null;
+  const isGroupAdmin = Boolean(
+    currentUserId && (currentUserId === groupAdminId || user?.role === "admin")
+  );
+
   const handleClick = async (e) => {
     e.preventDefault();
+    if (!isGroupAdmin) return;
+    const email = modEmail.trim();
+    if (!email) return;
     setLoading(true);
-    if (modEmail.trim === "") return;
     try {
-      const response = await fetch("/api/group/addModerator", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          groupId,
-          userId: modEmail,
-        }),
-        credentials: "include",
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.message);
+      const data = await addModerator({ groupId, email });
+      toast.success(data?.message || "Moderator added successfully");
     } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to add moderator");
     } finally {
       setModEmail("");
       setModerator();
@@ -39,18 +44,15 @@ const GroupDetails = ({ group }) => {
   const setModerator = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/group/${groupId}`, {
-        credentials: "include",
-      });
-
-      const data = await response.json();
-
-      setMods(data?.moderators);
-      setAdmin(data?.admin);
-      setMembers(data?.members);
-      if (!response.ok) throw new Error(data?.message);
+      const response = await getgroupInfo(groupId);
+      const data = response?.data;
+      if (data) {
+        setMods(data?.moderators || []);
+        setAdmin(data?.admin);
+        setMembers(data?.members || []);
+      }
     } catch (error) {
-      toast.error()
+      console.error("Error fetching group info:", error);
     } finally {
       setLoading(false);
     }
@@ -75,6 +77,7 @@ const GroupDetails = ({ group }) => {
         setModEmail={setModEmail}
         loading={loading}
         fallback="No moderators assigned"
+        isAdmin={isGroupAdmin}
       />
       <GroupSection
         title="Members"

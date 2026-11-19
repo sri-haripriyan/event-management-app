@@ -24,6 +24,7 @@ const Signup = () => {
       toast.success("Signup Successful");
       setUser(data);
       setuserName("");
+      setEmail("");
       setPassword("");
       // Flag for events page to open personal data modal after 2 seconds
       sessionStorage.setItem("askPersonalData", "true");
@@ -31,16 +32,18 @@ const Signup = () => {
       navigate(from, { replace: true, state: { newlyRegistered: true } });
     },
     onError: (error) => {
-      toast.error(error.response?.data?.error || error?.message);
+      const msg =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error?.message ||
+        "Signup failed. Please try again.";
+      toast.error(msg);
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     mutate({ userName, email, password });
-    setuserName("");
-    setEmail("");
-    setPassword("");
   };
 
   return (

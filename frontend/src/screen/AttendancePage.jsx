@@ -20,6 +20,16 @@ const AttendancePage = () => {
     }
   }, [user, navigate]);
 
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else if (eventId) {
+      navigate(`/events/${eventId}`, { replace: true });
+    } else {
+      navigate("/events", { replace: true });
+    }
+  };
+
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'present' | 'absent'
@@ -366,7 +376,7 @@ const AttendancePage = () => {
           { facingMode: "user" },
           config,
           (decodedText) => handleQrDetected(decodedText),
-          () => {}
+          () => { }
         );
         setIsScannerRunning(true);
       } catch (fallbackErr) {
@@ -394,9 +404,9 @@ const AttendancePage = () => {
         try {
           const state = html5QrCodeRef.current.getState?.();
           if (state === 2 || html5QrCodeRef.current.isScanning) {
-            html5QrCodeRef.current.stop().catch(() => {});
+            html5QrCodeRef.current.stop().catch(() => { });
           }
-        } catch (_) {}
+        } catch (_) { }
       }
     };
   }, []);
@@ -462,7 +472,7 @@ const AttendancePage = () => {
             {isForbidden
               ? "Only the event host or verified organizers have permission to manage gate check-ins and view attendance rosters for this event."
               : fetchError?.response?.data?.message ||
-                "There was an issue retrieving the attendance data from the server."}
+              "There was an issue retrieving the attendance data from the server."}
           </p>
           <div className="flex items-center gap-3 mt-2">
             <button
@@ -647,22 +657,20 @@ const AttendancePage = () => {
               <button
                 type="button"
                 onClick={() => setStatusFilter("all")}
-                className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                  statusFilter === "all"
+                className={`px-3 py-1 rounded-lg font-semibold transition-all ${statusFilter === "all"
                     ? "bg-primary-container text-on-primary shadow-sm"
                     : "text-on-surface-variant hover:text-on-surface"
-                }`}
+                  }`}
               >
                 All ({currentTrackStats.total})
               </button>
               <button
                 type="button"
                 onClick={() => setStatusFilter("present")}
-                className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 ${
-                  statusFilter === "present"
+                className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 ${statusFilter === "present"
                     ? "bg-emerald-600 text-white shadow-sm"
                     : "text-on-surface-variant hover:text-on-surface"
-                }`}
+                  }`}
               >
                 <span>Present</span>
                 <span className="text-[10px] opacity-80">({currentTrackStats.present})</span>
@@ -670,11 +678,10 @@ const AttendancePage = () => {
               <button
                 type="button"
                 onClick={() => setStatusFilter("absent")}
-                className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 ${
-                  statusFilter === "absent"
+                className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1 ${statusFilter === "absent"
                     ? "bg-amber-600 text-white shadow-sm"
                     : "text-on-surface-variant hover:text-on-surface"
-                }`}
+                  }`}
               >
                 <span>Absent</span>
                 <span className="text-[10px] opacity-80">({currentTrackStats.absent})</span>
@@ -749,9 +756,8 @@ const AttendancePage = () => {
                       return (
                         <tr
                           key={applicant._id || idx}
-                          className={`hover:bg-surface-container-high/40 transition-colors ${
-                            isPresent ? "bg-emerald-950/10" : ""
-                          }`}
+                          className={`hover:bg-surface-container-high/40 transition-colors ${isPresent ? "bg-emerald-950/10" : ""
+                            }`}
                         >
                           <td className="py-3 px-4 text-outline font-mono">{idx + 1}</td>
                           <td className="py-3 px-4">
@@ -784,16 +790,14 @@ const AttendancePage = () => {
                           </td>
                           <td className="py-3 px-4">
                             <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                                isPresent
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${isPresent
                                   ? "bg-emerald-950/40 text-emerald-300 border-emerald-500/30"
                                   : "bg-amber-950/40 text-amber-300 border-amber-500/30"
-                              }`}
+                                }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  isPresent ? "bg-emerald-400" : "bg-amber-400"
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full ${isPresent ? "bg-emerald-400" : "bg-amber-400"
+                                  }`}
                               />
                               <span>{isPresent ? "Present" : "Absent"}</span>
                             </span>
@@ -843,16 +847,14 @@ const AttendancePage = () => {
               </div>
 
               <span
-                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                  isScannerRunning
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${isScannerRunning
                     ? "bg-emerald-950/40 text-emerald-300 border-emerald-500/30 animate-pulse"
                     : "bg-surface-container text-outline border-outline-variant/30"
-                }`}
+                  }`}
               >
                 <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    isScannerRunning ? "bg-emerald-400" : "bg-outline"
-                  }`}
+                  className={`w-1.5 h-1.5 rounded-full ${isScannerRunning ? "bg-emerald-400" : "bg-outline"
+                    }`}
                 />
                 <span>{isScannerRunning ? "Camera Active" : "Camera Standby"}</span>
               </span>
@@ -868,8 +870,8 @@ const AttendancePage = () => {
                     {scanResult?.type === "invalid_qr"
                       ? "qr_code_scanner"
                       : scanResult?.type === "already_scanned"
-                      ? "warning"
-                      : "camera_alt"}
+                        ? "warning"
+                        : "camera_alt"}
                   </span>
                   <p className="text-xs text-on-surface-variant font-medium max-w-[220px]">
                     {scanResult
@@ -942,31 +944,29 @@ const AttendancePage = () => {
 
             {!isScanning && scanResult && (
               <div
-                className={`p-4 rounded-xl border flex flex-col gap-3 animate-fade-in ${
-                  scanResult.type === "success"
+                className={`p-4 rounded-xl border flex flex-col gap-3 animate-fade-in ${scanResult.type === "success"
                     ? "bg-emerald-950/20 border-emerald-500/30"
                     : scanResult.type === "already_scanned"
-                    ? "bg-amber-950/20 border-amber-500/30"
-                    : "bg-error/10 border-error/30"
-                }`}
+                      ? "bg-amber-950/20 border-amber-500/30"
+                      : "bg-error/10 border-error/30"
+                  }`}
               >
                 {/* Header Status Badge Row */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border ${
-                      scanResult.type === "success"
+                    className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border ${scanResult.type === "success"
                         ? "text-emerald-400 bg-emerald-950/60 border-emerald-500/30"
                         : scanResult.type === "already_scanned"
-                        ? "text-amber-400 bg-amber-950/60 border-amber-500/30"
-                        : "text-error bg-error/20 border-error/30"
-                    }`}
+                          ? "text-amber-400 bg-amber-950/60 border-amber-500/30"
+                          : "text-error bg-error/20 border-error/30"
+                      }`}
                   >
                     <span className="material-symbols-outlined text-xs">
                       {scanResult.type === "success"
                         ? "verified"
                         : scanResult.type === "already_scanned"
-                        ? "warning"
-                        : "cancel"}
+                          ? "warning"
+                          : "cancel"}
                     </span>
                     <span>{scanResult.statusBadge}</span>
                   </span>
@@ -1020,11 +1020,10 @@ const AttendancePage = () => {
                           Attendance Status
                         </span>
                         <span
-                          className={`font-semibold text-xs ${
-                            scanResult.type === "success"
+                          className={`font-semibold text-xs ${scanResult.type === "success"
                               ? "text-emerald-400"
                               : "text-amber-400"
-                          }`}
+                            }`}
                         >
                           {scanResult.attendee.status}
                         </span>

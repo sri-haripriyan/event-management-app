@@ -8,5 +8,14 @@ export default defineConfig(({ mode }) => {
 		optimizeDeps: {
 			include: ["@emailjs/browser"],
 		},
+		server: {
+			proxy: {
+				"/api": {
+					target: env.VITE_BACKEND_URL || "http://localhost:5000",
+					changeOrigin: true,
+					secure: false,
+				},
+			},
+		},
 	};
 });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FiArrowLeft,
@@ -16,6 +16,8 @@ import {
   FiSend,
   FiArrowRight,
   FiInfo,
+  FiLogIn,
+  FiX,
 } from "react-icons/fi";
 import { formatTimestamp } from "../utils/time.js";
 import { useAuth } from "../hooks/useAuth.jsx";
@@ -30,9 +32,11 @@ import { toast } from "react-toastify";
 
 const EventSection = ({ event }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [selectedGroupIds, setSelectedGroupIds] = useState([]);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Fetch groups for this event
   const { data: subEventGroups } = useQuery({
@@ -207,11 +211,17 @@ const EventSection = ({ event }) => {
   const technicalTracks = event?.technical || [];
   const nonTechnicalTracks = event?.nonTechnical || [];
 
+  const hasSelectedTechnical = technicalTracks.some(
+    (t) => getTrackDetails(t).isSelected
+  );
+  const hasSelectedNonTechnical = nonTechnicalTracks.some(
+    (t) => getTrackDetails(t).isSelected
+  );
+
   const handleToggleTrack = (groupId) => {
     if (canManageEvent) return;
     if (!user) {
-      toast.info("Please login to select sub-events");
-      navigate("/login");
+      setShowLoginModal(true);
       return;
     }
     if (!groupId) {
@@ -226,8 +236,7 @@ const EventSection = ({ event }) => {
   const handleToggleAllInList = (tracks) => {
     if (canManageEvent) return;
     if (!user) {
-      toast.info("Please login to select sub-events");
-      navigate("/login");
+      setShowLoginModal(true);
       return;
     }
     const availableGroupIds = tracks
@@ -300,8 +309,7 @@ const EventSection = ({ event }) => {
 
   const handleFreeRegister = () => {
     if (!user) {
-      toast.info("Please login to request sub-events");
-      navigate("/login");
+      setShowLoginModal(true);
       return;
     }
     if (selectedGroupIds.length === 0) {
@@ -313,8 +321,7 @@ const EventSection = ({ event }) => {
 
   const handlePaidProceed = () => {
     if (!user) {
-      toast.info("Please login to proceed to payment");
-      navigate("/login");
+      setShowLoginModal(true);
       return;
     }
     if (selectedGroupIds.length === 0) {
@@ -371,7 +378,7 @@ const EventSection = ({ event }) => {
     return (
       <div
         key={groupId || index}
-        onClick={!canManageEvent && isAvailable && groupId ? () => handleToggleTrack(groupId) : undefined}
+        onClick={!canManageEvent && isAvailable ? () => handleToggleTrack(groupId) : undefined}
         className={`p-3.5 rounded-2xl border transition-all duration-200 select-none flex items-center justify-between gap-3 ${canManageEvent
           ? "bg-surface-container-low border-outline-variant/30 cursor-default"
           : isAlreadyRequested
@@ -609,7 +616,7 @@ const EventSection = ({ event }) => {
                           : "Click blocks below to select technical sub-events"}
                       </p>
                     </div>
-                    {technicalTracks.length > 0 && !canManageEvent && (
+                    {technicalTracks.length > 0 && !canManageEvent && hasSelectedTechnical && (
                       <button
                         type="button"
                         onClick={() => handleToggleAllInList(technicalTracks)}
@@ -649,7 +656,7 @@ const EventSection = ({ event }) => {
                           : "Click blocks below to select non-technical sub-events"}
                       </p>
                     </div>
-                    {nonTechnicalTracks.length > 0 && !canManageEvent && (
+                    {nonTechnicalTracks.length > 0 && !canManageEvent && hasSelectedNonTechnical && (
                       <button
                         type="button"
                         onClick={() => handleToggleAllInList(nonTechnicalTracks)}
@@ -962,6 +969,63 @@ const EventSection = ({ event }) => {
           </div>
         </div>
       </div>
+
+      {/* Login Prompt Modal */}
+      {showLoginModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowLoginModal(false)}
+        >
+          <div
+            className="w-full max-w-sm sm:max-w-md bg-surface-container-lowest border border-outline-variant/30 rounded-3xl shadow-2xl p-6 sm:p-7 space-y-5 animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-primary-container/15 text-primary-container flex items-center justify-center shadow-sm">
+                <FiLogIn size={24} />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition"
+                aria-label="Close modal"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg sm:text-xl font-bold text-on-surface">
+                Login to register the event
+              </h3>
+              <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
+                You need to be signed in to select tracks and register for this event. Please log in or create an account to proceed.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLoginModal(false)}
+                className="px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-xs sm:text-sm font-semibold text-on-surface transition active:scale-95 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate("/login", { state: { from: location } });
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container hover:bg-surface-tint text-on-primary font-semibold text-xs sm:text-sm shadow-md shadow-primary-container/20 transition active:scale-95 cursor-pointer"
+              >
+                <FiLogIn size={16} />
+                <span>Login</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
