@@ -529,6 +529,24 @@ const EventSection = ({ event }) => {
                   {event?.startTime} - {event?.endTime}
                 </span>
               </div>
+              {event?.venue && (
+                <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-outline-variant/30 shadow-sm">
+                  <span className="material-symbols-outlined text-primary-container text-base">apartment</span>
+                  <span className="font-medium text-on-surface">{event.venue}</span>
+                </div>
+              )}
+              {event?.location && (
+                <a
+                  href={event.location}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 bg-primary-container/10 hover:bg-primary-container/20 text-primary-container px-3 py-1.5 rounded-full border border-primary-container/30 transition text-sm font-medium shadow-sm hover:scale-[1.02]"
+                >
+                  <span className="material-symbols-outlined text-base">location_on</span>
+                  <span>View on Maps</span>
+                  <span className="material-symbols-outlined text-xs">open_in_new</span>
+                </a>
+              )}
             </div>
           </div>
 

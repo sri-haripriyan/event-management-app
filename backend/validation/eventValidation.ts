@@ -25,6 +25,35 @@ export const containsHtml = (input: string): boolean => {
   return /<[a-z][\s\S]*>/i.test(input);
 };
 
+// Validate whether a string is a valid Google Maps URL
+export const isGoogleMapsUrl = (url: string): boolean => {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+  try {
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+
+    // Check Google Maps hosts and URL formats
+    if (host === "maps.app.goo.gl") return true;
+    if (host === "goo.gl" && path.startsWith("/maps")) return true;
+    if (host.startsWith("maps.google.")) return true;
+    if (
+      (host === "google.com" ||
+        host.endsWith(".google.com") ||
+        /google\.[a-z.]+$/.test(host)) &&
+      path.startsWith("/maps")
+    ) {
+      return true;
+    }
+
+    return false;
+  } catch (_) {
+    return false;
+  }
+};
+
 // Helper: parse HH:mm or HH:mm:ss to minutes from midnight
 export const parseTimeToMinutes = (timeStr: string): number | null => {
   if (!timeStr || typeof timeStr !== "string") return null;
@@ -121,6 +150,30 @@ export const createEventSchema = z
     endTime: z
       .string()
       .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be in HH:mm 24-hour format"),
+
+    venue: z
+      .string()
+      .trim()
+      .max(200, "Venue cannot exceed 200 characters")
+      .refine((val) => !containsHtml(val), {
+        message: "HTML tags are not allowed in the venue",
+      })
+      .optional()
+      .default(""),
+
+    location: z
+      .string()
+      .trim()
+      .max(1000, "Location link cannot exceed 1000 characters")
+      .refine((val) => !val || isGoogleMapsUrl(val), {
+        message:
+          "Location must be a valid Google Maps link (e.g. https://maps.google.com/... or https://maps.app.goo.gl/...)",
+      })
+      .refine((val) => !containsHtml(val), {
+        message: "HTML tags are not allowed in the location link",
+      })
+      .optional()
+      .default(""),
 
     timezone: z.string().optional().default("UTC"),
 

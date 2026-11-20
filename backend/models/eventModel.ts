@@ -62,6 +62,18 @@ const eventSchema = new mongoose.Schema(
       required: [true, "End time is required"],
       match: [/^\d{2}:\d{2}$/, "End time must be in HH:mm format"],
     },
+    venue: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [200, "Venue cannot exceed 200 characters"],
+    },
+    location: {
+      type: String,
+      trim: true,
+      default: "",
+      maxlength: [1000, "Location cannot exceed 1000 characters"],
+    },
     technical: [subEventTrackMongooseSchema],
     nonTechnical: [subEventTrackMongooseSchema],
     fileId: {

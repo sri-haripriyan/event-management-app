@@ -731,7 +731,18 @@ const ProfilePage = () => {
                                 <span className="material-symbols-outlined text-base text-outline">
                                   {isVirtual ? "language" : "place"}
                                 </span>
-                                {event.location || (isVirtual ? "Online / Virtual" : "Moscone Center, SF")}
+                                <span>{event.venue || event.location || (isVirtual ? "Online / Virtual" : "Moscone Center, SF")}</span>
+                                {event.location && event.location.startsWith("http") && (
+                                  <a
+                                    href={event.location}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    title="View on Google Maps"
+                                    className="text-primary-container hover:underline flex items-center text-xs ml-0.5"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">open_in_new</span>
+                                  </a>
+                                )}
                               </span>
 
                               <span className="text-outline">•</span>

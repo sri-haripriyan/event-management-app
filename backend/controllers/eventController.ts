@@ -80,6 +80,8 @@ export const createEvent = async (req: any, res: any) => {
       eventDate: body.eventDate,
       startTime: body.startTime,
       endTime: body.endTime,
+      venue: body.venue || "",
+      location: body.location || "",
       timezone: body.timezone || "UTC",
       technical,
       nonTechnical,
@@ -165,6 +167,8 @@ export const createEvent = async (req: any, res: any) => {
       eventDate: validData.eventDate,
       startTime: validData.startTime,
       endTime: validData.endTime,
+      venue: validData.venue || "",
+      location: validData.location || "",
       swags: validData.swags,
       refreshments: validData.refreshments,
       amount: validData.paid ? validData.amount : 0,
@@ -291,6 +295,8 @@ export const updateEvent = async (req: any, res: any) => {
       eventDate: body.eventDate || event.eventDate,
       startTime: body.startTime || event.startTime,
       endTime: body.endTime || event.endTime,
+      venue: body.venue !== undefined ? body.venue : (event.venue || ""),
+      location: body.location !== undefined ? body.location : (event.location || ""),
       timezone: body.timezone || "UTC",
       technical,
       nonTechnical,
@@ -342,6 +348,8 @@ export const updateEvent = async (req: any, res: any) => {
     event.eventDate = validData.eventDate;
     event.startTime = validData.startTime;
     event.endTime = validData.endTime;
+    event.venue = validData.venue || "";
+    event.location = validData.location || "";
     event.technical = validData.technical as any;
     event.nonTechnical = validData.nonTechnical as any;
     event.paid = validData.paid;

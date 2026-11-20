@@ -349,6 +349,24 @@ const ManageEvent = () => {
                     {event.startTime} {event?.endTime ? `- ${event.endTime}` : ""}
                   </span>
                 )}
+                {event?.venue && (
+                  <span className="flex items-center gap-1.5 text-on-surface">
+                    <span className="material-symbols-outlined text-sm text-primary-container">apartment</span>
+                    <span>{event.venue}</span>
+                  </span>
+                )}
+                {event?.location && (
+                  <a
+                    href={event.location}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-primary-container hover:underline font-medium"
+                  >
+                    <span className="material-symbols-outlined text-sm">location_on</span>
+                    <span>Map Location</span>
+                    <span className="material-symbols-outlined text-[10px]">open_in_new</span>
+                  </a>
+                )}
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-surface-container border border-outline-variant/40">
                   {event?.paid ? `Paid (₹${event.amount || 0})` : "Free Event"}
                 </span>

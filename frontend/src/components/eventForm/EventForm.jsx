@@ -55,6 +55,8 @@ const focusField = (field) => {
     description: "event-desc-input",
     imageUrl: "event-poster-input",
     file: "event-poster-input",
+    venue: "event-venue-input",
+    location: "event-location-input",
     eventDate: "event-date-input",
     startTime: "event-start-time-input",
     endTime: "event-end-time-input",
@@ -89,6 +91,8 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
     eventName: initialData?.title || "",
     description: initialData?.description || "",
     existingImageUrl: initialData?.imageUrl || "",
+    venue: initialData?.venue || "",
+    location: initialData?.location || "",
     eventDate: parseDateSafe(initialData?.eventDate),
     startTime: parseTimeStringSafe(initialData?.startTime),
     endTime: parseTimeStringSafe(initialData?.endTime),
@@ -115,6 +119,8 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
           eventName: initialData.title || prev.eventName,
           description: initialData.description || prev.description,
           existingImageUrl: initialData.imageUrl || prev.existingImageUrl,
+          venue: initialData.venue || prev.venue,
+          location: initialData.location || prev.location,
           eventDate: parseDateSafe(initialData.eventDate) || prev.eventDate,
           startTime: parseTimeStringSafe(initialData.startTime) || prev.startTime,
           endTime: parseTimeStringSafe(initialData.endTime) || prev.endTime,
@@ -369,6 +375,8 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
         description: true,
         imageUrl: true,
         file: true,
+        venue: true,
+        location: true,
         eventDate: true,
         startTime: true,
         endTime: true,
@@ -388,6 +396,8 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
         delete next.description;
         delete next.imageUrl;
         delete next.file;
+        delete next.venue;
+        delete next.location;
         delete next.eventDate;
         delete next.startTime;
         delete next.endTime;
@@ -464,7 +474,7 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
         }
         setErrors(normalizedErrors);
         const firstErrorKey = Object.keys(normalizedErrors)[0];
-        if (["title", "eventName", "description", "eventDate", "startTime", "endTime", "imageUrl", "file"].includes(firstErrorKey)) {
+        if (["title", "eventName", "description", "imageUrl", "file", "venue", "location", "eventDate", "startTime", "endTime"].includes(firstErrorKey)) {
           setStep(1);
         } else if (["technical", "nonTechnical", "paid", "amount", "subEvents"].includes(firstErrorKey)) {
           setStep(2);
@@ -504,6 +514,8 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
       description: true,
       imageUrl: true,
       file: true,
+      venue: true,
+      location: true,
       eventDate: true,
       startTime: true,
       endTime: true,
@@ -533,6 +545,8 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
 
     data.append("title", (formData.eventName || "").trim());
     data.append("description", (formData.description || "").trim());
+    data.append("venue", (formData.venue || "").trim());
+    data.append("location", (formData.location || "").trim());
     data.append("startTime", startTimeStr);
     data.append("endTime", endTimeStr);
     data.append("eventDate", dateStr);
