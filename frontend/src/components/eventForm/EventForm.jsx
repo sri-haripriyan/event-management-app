@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createEvent, updateEvent } from "../../services/api";
@@ -8,6 +8,18 @@ import EventFormTimeline, { FORM_STEPS } from "./EventFormTimeline";
 import EventDetailsStep from "./EventDetailsStep";
 import SubEventsStep from "./SubEventsStep";
 import InclusionsStep from "./InclusionsStep";
+import {
+  validateStep1,
+  validateStep2,
+  validateFullForm,
+  validateSingleField,
+  validateImageFileFrontend,
+  formatDateToYYYYMMDD,
+  formatTimeToHHmm,
+  getTodayLocalYYYYMMDD,
+  getCurrentLocalMinutes,
+  parseTimeToMinutes,
+} from "../../utils/eventValidation";
 
 const parseDateSafe = (val) => {
   if (!val) return null;
@@ -36,10 +48,39 @@ const parseTimeStringSafe = (timeStr) => {
   return null;
 };
 
+const focusField = (field) => {
+  const fieldMap = {
+    eventName: "event-title-input",
+    title: "event-title-input",
+    description: "event-desc-input",
+    imageUrl: "event-poster-input",
+    file: "event-poster-input",
+    eventDate: "event-date-input",
+    startTime: "event-start-time-input",
+    endTime: "event-end-time-input",
+    amount: "event-amount-input",
+    subEvents: "event-technical-input",
+  };
+  const id = fieldMap[field];
+  if (id) {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.focus();
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 50);
+  }
+};
+
 const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [file, setFile] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
+  const isSubmittedRef = useRef(false);
   const imageRef = useRef();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -61,40 +102,165 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
     nonTechnicalInput: "",
     technicalLimitInput: "",
     nonTechnicalLimitInput: "",
-    user: user?._id,
   });
+
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
 
   useEffect(() => {
     if (initialData) {
-      setFormData((prev) => ({
-        ...prev,
-        eventName: initialData.title || prev.eventName,
-        description: initialData.description || prev.description,
-        existingImageUrl: initialData.imageUrl || prev.existingImageUrl,
-        eventDate: parseDateSafe(initialData.eventDate) || prev.eventDate,
-        startTime: parseTimeStringSafe(initialData.startTime) || prev.startTime,
-        endTime: parseTimeStringSafe(initialData.endTime) || prev.endTime,
-        technical: initialData.technical || prev.technical,
-        nonTechnical: initialData.nonTechnical || prev.nonTechnical,
-        swags: initialData.swags ?? prev.swags,
-        refreshments: initialData.refreshments ?? prev.refreshments,
-        paid: initialData.paid ?? prev.paid,
-        amount: initialData.amount ?? prev.amount,
-      }));
+      setFormData((prev) => {
+        const next = {
+          ...prev,
+          eventName: initialData.title || prev.eventName,
+          description: initialData.description || prev.description,
+          existingImageUrl: initialData.imageUrl || prev.existingImageUrl,
+          eventDate: parseDateSafe(initialData.eventDate) || prev.eventDate,
+          startTime: parseTimeStringSafe(initialData.startTime) || prev.startTime,
+          endTime: parseTimeStringSafe(initialData.endTime) || prev.endTime,
+          technical: initialData.technical || prev.technical,
+          nonTechnical: initialData.nonTechnical || prev.nonTechnical,
+          swags: initialData.swags ?? prev.swags,
+          refreshments: initialData.refreshments ?? prev.refreshments,
+          paid: initialData.paid ?? prev.paid,
+          amount: initialData.amount ?? prev.amount,
+        };
+        formDataRef.current = next;
+        return next;
+      });
     }
   }, [initialData]);
 
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty && !isSubmittedRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   const handleChange = (name, value) => {
-    setFormData((prevState) => ({
-      ...prevState,
+    setIsDirty(true);
+
+    const nextFormData = {
+      ...formDataRef.current,
       [name]: value,
-    }));
+    };
+    formDataRef.current = nextFormData;
+    setFormData(nextFormData);
+
+    // If the field is marked as touched or currently has an error,
+    // re-validate it immediately on change so the error persists until validation succeeds!
+    if (touched[name] || errors[name]) {
+      const err = validateSingleField(name, value, nextFormData, file, mode);
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (err) {
+          next[name] = err;
+        } else {
+          delete next[name];
+        }
+        return next;
+      });
+    }
+
+    // Cross-field re-validation for time and date
+    if (name === "startTime") {
+      if (nextFormData.endTime && (touched.endTime || errors.endTime)) {
+        const endErr = validateSingleField("endTime", nextFormData.endTime, nextFormData, file, mode);
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (endErr) next.endTime = endErr;
+          else delete next.endTime;
+          return next;
+        });
+      }
+    }
+
+    if (name === "endTime") {
+      if (nextFormData.startTime && (touched.startTime || errors.startTime)) {
+        const startErr = validateSingleField("startTime", nextFormData.startTime, nextFormData, file, mode);
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (startErr) next.startTime = startErr;
+          else delete next.startTime;
+          return next;
+        });
+      }
+    }
+
+    if (name === "eventDate") {
+      const oldDateStr = formatDateToYYYYMMDD(formData.eventDate);
+      const newDateStr = formatDateToYYYYMMDD(value);
+      const todayStr = getTodayLocalYYYYMMDD();
+
+      if (oldDateStr === todayStr && newDateStr > todayStr) {
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (next.startTime && next.startTime.includes("today's event")) {
+            delete next.startTime;
+          }
+          return next;
+        });
+      } else if (newDateStr === todayStr && nextFormData.startTime) {
+        const startErr = validateSingleField("startTime", nextFormData.startTime, nextFormData, file, mode);
+        setErrors((prev) => {
+          const next = { ...prev };
+          if (startErr) {
+            next.startTime = startErr;
+          } else if (next.startTime && next.startTime.includes("today's event")) {
+            delete next.startTime;
+          }
+          return next;
+        });
+      }
+    }
+
+    if (name === "paid" && !value) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.amount;
+        return next;
+      });
+    }
+  };
+
+  const handleBlur = (fieldName) => {
+    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+    const currentData = formDataRef.current;
+    const val = currentData[fieldName];
+    const err = validateSingleField(fieldName, val, currentData, file, mode);
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (err) {
+        next[fieldName] = err;
+      } else {
+        delete next[fieldName];
+      }
+      return next;
+    });
+
+    if (fieldName === "startTime" && currentData.endTime && (touched.endTime || errors.endTime)) {
+      const endErr = validateSingleField("endTime", currentData.endTime, currentData, file, mode);
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (endErr) next.endTime = endErr;
+        else delete next.endTime;
+        return next;
+      });
+    }
   };
 
   const handleChangefoods = (name, value) => {
+    setIsDirty(true);
     setFormData((prev) => ({
       ...prev,
-      [name]: value === "on" ? !prev[name] : Boolean(value),
+      [name]: typeof value === "boolean" ? value : Boolean(value),
     }));
   };
 
@@ -106,32 +272,88 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
   };
 
   const addEvent = (field, eventName, limit) => {
-    if (eventName && eventName.trim()) {
-      setFormData((prevState) => {
-        if (prevState[field].length < 5) {
-          return {
-            ...prevState,
-            [field]: [...prevState[field], { name: eventName.trim(), limit: limit || 0 }],
-            [`${field}Input`]: "",
-            [`${field}LimitInput`]: "",
-          };
-        } else {
-          toast.warn("You can only add a maximum of 5 sub-events per category.");
-          return prevState;
-        }
-      });
+    const trimmed = (eventName || "").trim();
+    if (!trimmed) {
+      toast.error("Please enter a sub-event name");
+      return;
     }
+
+    if (trimmed.length > 50) {
+      toast.error("Sub-event name cannot exceed 50 characters");
+      return;
+    }
+
+    if (formData[field].length >= 20) {
+      toast.error("You can only add a maximum of 20 sub-events per category");
+      return;
+    }
+
+    // Case-insensitive duplicate check
+    const lowerTrimmed = trimmed.toLowerCase();
+    const isDuplicate = formData[field].some((t) => (t?.name || "").trim().toLowerCase() === lowerTrimmed);
+    if (isDuplicate) {
+      toast.error(`A sub-event named "${trimmed}" already exists in this track`);
+      return;
+    }
+
+    setIsDirty(true);
+    const parsedLimit = parseInt(limit, 10);
+    const finalLimit = isNaN(parsedLimit) || parsedLimit <= 0 ? 15 : parsedLimit;
+
+    setFormData((prevState) => {
+      const nextData = {
+        ...prevState,
+        [field]: [...prevState[field], { name: trimmed, limit: finalLimit }],
+        [`${field}Input`]: "",
+        [`${field}LimitInput`]: "",
+      };
+      formDataRef.current = nextData;
+      return nextData;
+    });
+
+    // Clear global subEvents error if tracks now exist
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.subEvents;
+      delete next[field];
+      return next;
+    });
   };
 
   const deleteEvent = (field, index) => {
+    setIsDirty(true);
     setFormData((prevState) => {
       const updatedEvents = prevState[field].filter((_, idx) => idx !== index);
-      return { ...prevState, [field]: updatedEvents };
+      const nextData = { ...prevState, [field]: updatedEvents };
+      formDataRef.current = nextData;
+      const totalTracks = (nextData.technical?.length || 0) + (nextData.nonTechnical?.length || 0);
+      if (totalTracks === 0 && (touched.subEvents || errors.subEvents)) {
+        setErrors((prev) => ({
+          ...prev,
+          subEvents: "At least one sub-event track (technical or non-technical) is required",
+        }));
+      }
+      return nextData;
     });
   };
 
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    setIsDirty(true);
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+    setTouched((prev) => ({ ...prev, imageUrl: true, file: true }));
+
+    const err = validateImageFileFrontend(selectedFile, formDataRef.current.existingImageUrl, mode);
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (err) {
+        next.imageUrl = err;
+      } else {
+        delete next.imageUrl;
+        delete next.file;
+      }
+      return next;
+    });
   };
 
   const prevStep = () => {
@@ -140,29 +362,65 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
 
   const nextStep = () => {
     if (step === 1) {
-      if (!formData.eventName || !formData.description) {
-        toast.info("Please fill event name and description", { autoClose: 1500 });
+      setTouched((prev) => ({
+        ...prev,
+        eventName: true,
+        title: true,
+        description: true,
+        imageUrl: true,
+        file: true,
+        eventDate: true,
+        startTime: true,
+        endTime: true,
+      }));
+      const step1Result = validateStep1(formDataRef.current, file, mode);
+      if (!step1Result.isValid) {
+        setErrors(step1Result.errors);
+        const firstField = Object.keys(step1Result.errors)[0];
+        focusField(firstField);
+        toast.error(step1Result.errors[firstField] || "Please resolve errors before continuing");
         return;
       }
-      if (mode === "create" && !file && !formData.existingImageUrl) {
-        toast.info("Please upload an event poster image", { autoClose: 1500 });
-        return;
-      }
-      if (!formData.eventDate || !formData.startTime || !formData.endTime) {
-        toast.info("Please select event date, start time, and end time", { autoClose: 1500 });
-        return;
-      }
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.eventName;
+        delete next.title;
+        delete next.description;
+        delete next.imageUrl;
+        delete next.file;
+        delete next.eventDate;
+        delete next.startTime;
+        delete next.endTime;
+        return next;
+      });
+      setStep(2);
+      return;
     }
 
     if (step === 2) {
-      if (formData.technical.length === 0 && formData.nonTechnical.length === 0) {
-        toast.info("There should be at least 1 sub-event track!", { autoClose: 2000 });
+      setTouched((prev) => ({
+        ...prev,
+        subEvents: true,
+        amount: true,
+      }));
+      const step2Result = validateStep2(formDataRef.current);
+      if (!step2Result.isValid) {
+        setErrors(step2Result.errors);
+        const firstField = Object.keys(step2Result.errors)[0];
+        focusField(firstField);
+        toast.error(step2Result.errors[firstField] || "Please resolve sub-event track errors");
         return;
       }
-      if (formData.paid && (!formData.amount || Number(formData.amount) <= 0)) {
-        toast.info("Please enter a valid registration amount for paid sub-events", { autoClose: 2000 });
-        return;
-      }
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.subEvents;
+        delete next.technical;
+        delete next.nonTechnical;
+        delete next.amount;
+        return next;
+      });
+      setStep(3);
+      return;
     }
 
     if (step < FORM_STEPS.length) {
@@ -178,14 +436,44 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
       return createEvent(data);
     },
     onSuccess: (data) => {
-      toast.success(data?.message || (mode === "edit" ? "Event updated successfully!" : "Event published successfully!"));
+      isSubmittedRef.current = true;
+      setIsDirty(false);
+      toast.success(
+        data?.message || (mode === "edit" ? "Event updated successfully!" : "Event published successfully!")
+      );
       queryClient.invalidateQueries({ queryKey: ["getevents"] });
       queryClient.invalidateQueries({ queryKey: ["getevents", eventId] });
       queryClient.invalidateQueries({ queryKey: ["getGroupByEventId", eventId] });
       navigate(mode === "edit" && eventId ? `/events/${eventId}` : "/events");
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || error?.message || "Failed to save event details");
+      const resData = error?.response?.data;
+      if (resData?.errors && typeof resData.errors === "object") {
+        const normalizedErrors = {};
+        for (const [k, v] of Object.entries(resData.errors)) {
+          if (k === "title") {
+            normalizedErrors.eventName = v;
+            normalizedErrors.title = v;
+          } else if (k === "file") {
+            normalizedErrors.imageUrl = v;
+          } else if (k === "technicalEvents" || k === "nonTechnicalEvents") {
+            normalizedErrors.subEvents = v;
+          } else {
+            normalizedErrors[k] = v;
+          }
+        }
+        setErrors(normalizedErrors);
+        const firstErrorKey = Object.keys(normalizedErrors)[0];
+        if (["title", "eventName", "description", "eventDate", "startTime", "endTime", "imageUrl", "file"].includes(firstErrorKey)) {
+          setStep(1);
+        } else if (["technical", "nonTechnical", "paid", "amount", "subEvents"].includes(firstErrorKey)) {
+          setStep(2);
+        }
+        focusField(firstErrorKey);
+        toast.error(normalizedErrors[firstErrorKey] || resData.error || "Validation failed");
+      } else {
+        toast.error(resData?.message || resData?.error || error?.message || "Failed to save event details");
+      }
     },
   });
 
@@ -193,6 +481,10 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
     if (step > 1) {
       prevStep();
       return;
+    }
+    if (isDirty) {
+      const confirmLeave = window.confirm("You have unsaved changes. Are you sure you want to leave?");
+      if (!confirmLeave) return;
     }
     if (window.history.state && window.history.state.idx > 0) {
       navigate(-1);
@@ -206,49 +498,52 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (mode === "create" && !file && !formData.existingImageUrl) {
-      toast.info("Please upload the event poster!", { autoClose: 1500 });
-      return;
-    }
-    if (!formData.startTime || !formData.endTime || !formData.eventDate || !formData.eventName || !formData.description) {
-      toast.info("Please fill all the core event details", { autoClose: 1500 });
-      return;
-    }
-    if (formData.technical.length === 0 && formData.nonTechnical.length === 0) {
-      toast.info("There should be at least 1 sub-event track!", { autoClose: 2000 });
-      return;
-    }
-    if (formData.paid && (!formData.amount || Number(formData.amount) <= 0)) {
-      toast.info("Please enter a valid registration amount for paid sub-events", { autoClose: 2000 });
+    setTouched({
+      eventName: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      file: true,
+      eventDate: true,
+      startTime: true,
+      endTime: true,
+      subEvents: true,
+      amount: true,
+    });
+
+    // Full validation across all steps
+    const validation = validateFullForm(formDataRef.current, file, mode);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      if (validation.firstStepWithError) {
+        setStep(validation.firstStepWithError);
+      }
+      if (validation.firstErrorField) {
+        focusField(validation.firstErrorField);
+      }
+      const firstErrMsg = validation.errors[validation.firstErrorField] || "Please resolve form errors before submitting";
+      toast.error(firstErrMsg);
       return;
     }
 
     const data = new FormData();
-    const startTimeStr = formData.startTime instanceof Date 
-      ? formData.startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }) 
-      : String(formData.startTime);
-    const endTimeStr = formData.endTime instanceof Date 
-      ? formData.endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true }) 
-      : String(formData.endTime);
-    const dateStr = formData.eventDate instanceof Date 
-      ? formData.eventDate.toISOString().split("T")[0] 
-      : String(formData.eventDate);
+    const dateStr = formatDateToYYYYMMDD(formData.eventDate);
+    const startTimeStr = formatTimeToHHmm(formData.startTime);
+    const endTimeStr = formatTimeToHHmm(formData.endTime);
 
-    data.append("title", formData.eventName);
-    data.append("description", formData.description);
+    data.append("title", (formData.eventName || "").trim());
+    data.append("description", (formData.description || "").trim());
     data.append("startTime", startTimeStr);
     data.append("endTime", endTimeStr);
     data.append("eventDate", dateStr);
+    data.append("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
     data.append("paid", formData.paid);
-    data.append("amount", formData.paid ? formData.amount : 0);
+    data.append("amount", formData.paid ? Number(formData.amount) : 0);
     data.append("swags", formData.swags);
     data.append("refreshments", formData.refreshments);
     data.append("technicalEvents", JSON.stringify(formData.technical));
     data.append("nonTechnicalEvents", JSON.stringify(formData.nonTechnical));
 
-    if (formData.user) {
-      data.append("user", formData.user);
-    }
     if (file) {
       data.append("file", file);
     }
@@ -276,12 +571,14 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
         <EventFormTimeline step={step} />
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="flex flex-col relative min-h-[420px] justify-between">
+        <form noValidate onSubmit={handleSubmit} className="flex flex-col relative min-h-[420px] justify-between">
           {step === 1 && (
             <EventDetailsStep
               formData={formData}
               handleChange={handleChange}
               handleFileChange={handleFileChange}
+              handleBlur={handleBlur}
+              errors={errors}
               imageRef={imageRef}
               nextStep={nextStep}
               mode={mode}
@@ -292,9 +589,12 @@ const EventForm = ({ mode = "create", eventId = null, initialData = null }) => {
             <SubEventsStep
               formData={formData}
               setFormData={setFormData}
+              handleChange={handleChange}
               updateInput={updateInput}
               addEvent={addEvent}
               deleteEvent={deleteEvent}
+              handleBlur={handleBlur}
+              errors={errors}
               prevStep={prevStep}
               nextStep={nextStep}
             />

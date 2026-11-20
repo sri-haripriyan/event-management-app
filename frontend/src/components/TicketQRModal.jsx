@@ -1,49 +1,9 @@
-import { useState } from "react";
-import toast from "react-hot-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { scanTicketCheckIn } from "../services/api";
 import { getTicketStatus } from "../utils/ticketUtils";
-import Spinner from "./Spinner";
 
 const TicketQRModal = ({ isOpen, onClose, event, currentUser }) => {
-  const queryClient = useQueryClient();
-  const [isSimulatingScan, setIsSimulatingScan] = useState(false);
-
-  // Scan / Check-in Mutation
-  const { mutate: performCheckIn, isPending: isCheckingIn } = useMutation({
-    mutationFn: scanTicketCheckIn,
-    onSuccess: (data) => {
-      toast.success(data?.message || "Ticket successfully scanned & checked in!");
-      queryClient.invalidateQueries({ queryKey: ["profile-panel"] });
-    },
-    onError: (err) => {
-      const msg =
-        err?.response?.data?.error ||
-        err?.response?.data?.message ||
-        err?.message ||
-        "Check-in validation failed";
-      toast.error(msg);
-    },
-  });
-
   if (!isOpen || !event) return null;
 
   const status = getTicketStatus(event);
-  const isPaid = event.paid === true || (event.amount && event.amount > 0);
-  const amountFormatted = event.amount ? `$${Number(event.amount).toFixed(2)}` : "$99.00";
-
-  const handleSimulateScan = () => {
-    if (status.isScanned) {
-      toast.info("This ticket is already checked in.");
-      return;
-    }
-    const payload = {
-      applicationId: event.applicationId,
-      eventId: event._id,
-      qrPayload: `${event._id}==${event.applicationId}`,
-    };
-    performCheckIn(payload);
-  };
 
   return (
     <div
@@ -264,42 +224,6 @@ const TicketQRModal = ({ isOpen, onClose, event, currentUser }) => {
               </span>
             </div>
           </div>
-
-          {/* Organizer / Gate Scan Simulation Action (for validation & testing) */}
-          {event.applicationId && (
-            <div className="pt-1 flex flex-col gap-2">
-              <button
-                type="button"
-                disabled={isCheckingIn || status.isScanned}
-                onClick={handleSimulateScan}
-                className={`w-full py-2.5 px-4 rounded-xl font-label-md text-xs font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${
-                  status.isScanned
-                    ? "bg-surface-container-high text-outline cursor-not-allowed border border-outline-variant/20"
-                    : "bg-primary-container text-on-primary hover:bg-surface-tint active:scale-[0.98]"
-                }`}
-              >
-                {isCheckingIn ? (
-                  <>
-                    <Spinner size="sm" />
-                    <span>Validating check-in...</span>
-                  </>
-                ) : status.isScanned ? (
-                  <>
-                    <span className="material-symbols-outlined text-base">check_circle</span>
-                    <span>Already Checked In (Cannot scan again)</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-base">qr_code_scanner</span>
-                    <span>Simulate Entry Scan &amp; Check In</span>
-                  </>
-                )}
-              </button>
-              <span className="text-[10px] text-center text-outline">
-                Simulates venue scanner validation: updates check-in to SCANNED and prevents repeat scans.
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>
