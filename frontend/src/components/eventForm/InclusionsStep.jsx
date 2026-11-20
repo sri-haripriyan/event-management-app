@@ -62,7 +62,7 @@ const InclusionsStep = ({
         </button>
         <button
           type="submit"
-          className="px-6 py-2.5 bg-primary-container hover:bg-surface-tint text-on-primary rounded-xl font-semibold transition text-sm shadow-md shadow-primary-container/20 active:scale-[0.98] min-w-[140px] flex items-center justify-center gap-1.5"
+          className="px-6 py-2.5 bg-primary-container hover:bg-surface-tint text-on-primary rounded-xl font-semibold transition text-sm shadow-md shadow-primary-container/20 active:scale-[0.98] min-w-[140px] flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
           disabled={isPending}
         >
           {isPending ? (
