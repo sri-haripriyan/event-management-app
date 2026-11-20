@@ -134,6 +134,113 @@ const EventDetailsStep = ({
         )}
       </div>
 
+      {/* Venue & Location Section */}
+      <div className="space-y-4 pt-1">
+        {/* Venue Input */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center pl-1">
+            <label
+              htmlFor="event-venue-input"
+              className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm text-primary-container">apartment</span>
+              <span>Venue (College / Campus / Place) <span className="text-rose-500">*</span></span>
+            </label>
+            <span className="text-[11px] text-on-surface-variant/70">
+              {(formData?.venue || "").trim().length}/200
+            </span>
+          </div>
+          <input
+            id="event-venue-input"
+            type="text"
+            placeholder="e.g., Stanford Memorial Auditorium or PSG College of Technology"
+            value={formData?.venue || ""}
+            onChange={(e) => handleChange("venue", e.target.value)}
+            onBlur={() => handleBlur?.("venue")}
+            maxLength={200}
+            className={`w-full bg-surface-container-low border rounded-xl px-4 py-3 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 ${
+              errors.venue
+                ? "border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20"
+                : "border-outline-variant/40 focus:border-primary-container focus:ring-primary-container/30"
+            }`}
+          />
+          {errors.venue && (
+            <p className="text-xs text-rose-500 font-medium flex items-center gap-1 mt-1" role="alert">
+              <span className="material-symbols-outlined text-sm">error</span>
+              {errors.venue}
+            </p>
+          )}
+        </div>
+
+        {/* Location Google Maps Link Input */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center pl-1">
+            <label
+              htmlFor="event-location-input"
+              className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5"
+            >
+              <span className="material-symbols-outlined text-sm text-primary-container">location_on</span>
+              <span>Location (Google Maps Link) <span className="text-rose-500">*</span></span>
+            </label>
+            <div className="flex items-center gap-2">
+              {formData?.venue?.trim() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const generatedUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      formData.venue.trim()
+                    )}`;
+                    handleChange("location", generatedUrl);
+                  }}
+                  className="text-[11px] text-primary-container hover:underline font-semibold flex items-center gap-1 bg-primary-container/10 px-2 py-0.5 rounded-md transition hover:bg-primary-container/20"
+                  title="Generate a direct Google Maps search link from the venue name"
+                >
+                  <span className="material-symbols-outlined text-xs">auto_fix_high</span>
+                  <span>Generate from Venue</span>
+                </button>
+              )}
+              {formData?.location && formData.location.startsWith("http") && (
+                <a
+                  href={formData.location}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-outline hover:text-on-surface flex items-center gap-0.5 hover:underline"
+                  title="Open in Google Maps to preview"
+                >
+                  <span>Preview</span>
+                  <span className="material-symbols-outlined text-xs">open_in_new</span>
+                </a>
+              )}
+            </div>
+          </div>
+          <input
+            id="event-location-input"
+            type="url"
+            placeholder="e.g., https://maps.google.com/... or https://maps.app.goo.gl/..."
+            value={formData?.location || ""}
+            onChange={(e) => handleChange("location", e.target.value)}
+            onBlur={() => handleBlur?.("location")}
+            maxLength={1000}
+            className={`w-full bg-surface-container-low border rounded-xl px-4 py-3 text-on-surface outline-none transition text-sm placeholder:text-outline focus:ring-1 ${
+              errors.location
+                ? "border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/20"
+                : "border-outline-variant/40 focus:border-primary-container focus:ring-primary-container/30"
+            }`}
+          />
+          {errors.location ? (
+            <p className="text-xs text-rose-500 font-medium flex items-center gap-1 mt-1" role="alert">
+              <span className="material-symbols-outlined text-sm">error</span>
+              {errors.location}
+            </p>
+          ) : (
+            <p className="text-[11px] text-on-surface-variant/70 pl-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-xs text-outline">info</span>
+              <span>Provide a Google Maps share link or click &apos;Generate from Venue&apos;</span>
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* Event Date & Timings Section */}
       <EventDateTime
         formData={formData}

@@ -16,6 +16,35 @@ export const containsHtml = (input) => {
   return /<[a-z][\s\S]*>/i.test(input);
 };
 
+// Validate whether a string is a valid Google Maps URL
+export const isGoogleMapsUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+  try {
+    const parsed = new URL(trimmed);
+    const host = parsed.hostname.toLowerCase();
+    const path = parsed.pathname.toLowerCase();
+
+    // Check Google Maps hosts and URL formats
+    if (host === "maps.app.goo.gl") return true;
+    if (host === "goo.gl" && path.startsWith("/maps")) return true;
+    if (host.startsWith("maps.google.")) return true;
+    if (
+      (host === "google.com" ||
+        host.endsWith(".google.com") ||
+        /google\.[a-z.]+$/.test(host)) &&
+      path.startsWith("/maps")
+    ) {
+      return true;
+    }
+
+    return false;
+  } catch (_) {
+    return false;
+  }
+};
+
 // Sanitize string by removing script and HTML tags
 export const sanitizeString = (input) => {
   if (typeof input !== "string") return "";
@@ -116,6 +145,28 @@ export const step1ZodSchema = z
     endTime: z
       .string({ required_error: "End time is required" })
       .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "End time must be in HH:mm 24-hour format"),
+
+    venue: z
+      .string({ required_error: "Venue is required" })
+      .trim()
+      .min(2, "Venue must be at least 2 characters")
+      .max(200, "Venue cannot exceed 200 characters")
+      .refine((val) => !containsHtml(val), {
+        message: "HTML tags are not allowed in the venue",
+      }),
+
+    location: z
+      .string({ required_error: "Location Google Maps link is required" })
+      .trim()
+      .min(1, "Location Google Maps link is required")
+      .max(1000, "Location link cannot exceed 1000 characters")
+      .refine((val) => isGoogleMapsUrl(val), {
+        message:
+          "Location must be a valid Google Maps link (e.g., https://maps.google.com/... or https://maps.app.goo.gl/...)",
+      })
+      .refine((val) => !containsHtml(val), {
+        message: "HTML tags are not allowed in the location link",
+      }),
   })
   .superRefine((data, ctx) => {
     const todayStr = getTodayLocalYYYYMMDD();
@@ -218,6 +269,8 @@ export const validateStep1 = (formData, file, mode = "create") => {
   const payload = {
     eventName: formData.eventName ? String(formData.eventName).trim() : "",
     description: formData.description ? String(formData.description).trim() : "",
+    venue: formData.venue ? String(formData.venue).trim() : "",
+    location: formData.location ? String(formData.location).trim() : "",
     eventDate: dateStr,
     startTime: startStr,
     endTime: endStr,
@@ -371,6 +424,26 @@ export const validateSingleField = (name, value, allFormData = {}, file = null, 
       return null;
     }
 
+    case "venue": {
+      const trimmed = typeof value === "string" ? value.trim() : "";
+      if (!trimmed) return "Venue is required";
+      if (trimmed.length < 2) return "Venue must be at least 2 characters";
+      if (trimmed.length > 200) return "Venue cannot exceed 200 characters";
+      if (containsHtml(trimmed)) return "HTML tags are not allowed in the venue";
+      return null;
+    }
+
+    case "location": {
+      const trimmed = typeof value === "string" ? value.trim() : "";
+      if (!trimmed) return "Location Google Maps link is required";
+      if (trimmed.length > 1000) return "Location link cannot exceed 1000 characters";
+      if (!isGoogleMapsUrl(trimmed)) {
+        return "Location must be a valid Google Maps link (e.g., https://maps.google.com/... or https://maps.app.goo.gl/...)";
+      }
+      if (containsHtml(trimmed)) return "HTML tags are not allowed in the location link";
+      return null;
+    }
+
     case "imageUrl":
     case "file": {
       return validateImageFileFrontend(file, currentData.existingImageUrl, mode);
@@ -501,6 +574,8 @@ export const validateFullForm = (formData, file, mode = "create") => {
     "eventName",
     "description",
     "imageUrl",
+    "venue",
+    "location",
     "eventDate",
     "startTime",
     "endTime",
@@ -514,7 +589,18 @@ export const validateFullForm = (formData, file, mode = "create") => {
   for (const field of fieldsOrder) {
     if (allErrors[field]) {
       firstErrorField = field;
-      if (["eventName", "description", "imageUrl", "eventDate", "startTime", "endTime"].includes(field)) {
+      if (
+        [
+          "eventName",
+          "description",
+          "imageUrl",
+          "venue",
+          "location",
+          "eventDate",
+          "startTime",
+          "endTime",
+        ].includes(field)
+      ) {
         firstStepWithError = 1;
       } else if (["subEvents", "amount"].includes(field)) {
         firstStepWithError = 2;

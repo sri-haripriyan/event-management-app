@@ -17,6 +17,7 @@ import {
   sanitizeString,
   getNowInTimezone,
   parseTimeToMinutes,
+  isGoogleMapsUrl,
 } from "../validation/eventValidation.js";
 import { createEvent, updateEvent, deleteEvent } from "../controllers/eventController.js";
 
@@ -572,6 +573,119 @@ describe("Event Validation & Controller Security Unit Tests", () => {
         (Message as any).deleteMany = origMsgDeleteMany;
         (JoinRequest as any).deleteMany = origReqDeleteMany;
       }
+    });
+  });
+
+  describe("8. Venue & Location (Google Maps) Validation", () => {
+    test("isGoogleMapsUrl correctly identifies valid and invalid Google Maps URLs", () => {
+      assert.equal(isGoogleMapsUrl("https://maps.google.com/?q=MIT"), true);
+      assert.equal(isGoogleMapsUrl("https://www.google.com/maps/search/?api=1&query=Stanford"), true);
+      assert.equal(isGoogleMapsUrl("https://maps.app.goo.gl/wS78ABC123"), true);
+      assert.equal(isGoogleMapsUrl("https://goo.gl/maps/XYZ987"), true);
+      assert.equal(isGoogleMapsUrl("https://google.com/maps/place/Harvard"), true);
+      assert.equal(isGoogleMapsUrl("https://www.google.co.in/maps/place/IIT"), true);
+
+      // Invalid URLs
+      assert.equal(isGoogleMapsUrl(""), false);
+      assert.equal(isGoogleMapsUrl("https://facebook.com"), false);
+      assert.equal(isGoogleMapsUrl("https://example.com/maps"), false);
+      assert.equal(isGoogleMapsUrl("javascript:alert(1)"), false);
+      assert.equal(isGoogleMapsUrl("not-a-url"), false);
+    });
+
+    test("accepts valid venue and valid Google Maps location link", () => {
+      const result = createEventSchema.safeParse({
+        title: "Campus Tech Fest 2027",
+        description: "A grand inter-college tech symposium with workshops and hackathons.",
+        eventDate: "2027-05-15",
+        startTime: "10:00",
+        endTime: "13:00",
+        venue: "MIT Stata Center, Cambridge, MA",
+        location: "https://www.google.com/maps/search/?api=1&query=MIT+Stata+Center",
+        technical: [{ name: "Hackathon", limit: 20 }],
+        paid: false,
+      });
+      assert.equal(result.success, true);
+      if (result.success) {
+        assert.equal(result.data.venue, "MIT Stata Center, Cambridge, MA");
+        assert.equal(result.data.location, "https://www.google.com/maps/search/?api=1&query=MIT+Stata+Center");
+      }
+    });
+
+    test("rejects venue or location containing HTML tags (XSS guard)", () => {
+      const resVenueXss = createEventSchema.safeParse({
+        title: "Campus Tech Fest 2027",
+        description: "A grand inter-college tech symposium with workshops and hackathons.",
+        eventDate: "2027-05-15",
+        startTime: "10:00",
+        endTime: "13:00",
+        venue: "MIT Auditorium <script>alert('hack')</script>",
+        location: "https://maps.google.com/?q=MIT",
+        technical: [{ name: "Hackathon", limit: 20 }],
+        paid: false,
+      });
+      assert.equal(resVenueXss.success, false);
+
+      const resLocXss = createEventSchema.safeParse({
+        title: "Campus Tech Fest 2027",
+        description: "A grand inter-college tech symposium with workshops and hackathons.",
+        eventDate: "2027-05-15",
+        startTime: "10:00",
+        endTime: "13:00",
+        venue: "MIT Auditorium",
+        location: "https://maps.google.com/?q=<script>alert(1)</script>",
+        technical: [{ name: "Hackathon", limit: 20 }],
+        paid: false,
+      });
+      assert.equal(resLocXss.success, false);
+    });
+
+    test("rejects invalid non-Google-Maps URL in location", () => {
+      const result = createEventSchema.safeParse({
+        title: "Campus Tech Fest 2027",
+        description: "A grand inter-college tech symposium with workshops and hackathons.",
+        eventDate: "2027-05-15",
+        startTime: "10:00",
+        endTime: "13:00",
+        venue: "Stanford Campus",
+        location: "https://some-random-domain.com/campus",
+        technical: [{ name: "Hackathon", limit: 20 }],
+        paid: false,
+      });
+      assert.equal(result.success, false);
+      if (!result.success) {
+        const locErr = result.error.issues.find((i) => i.path.includes("location"));
+        assert.ok(locErr);
+        assert.match(locErr.message, /valid Google Maps link/i);
+      }
+    });
+
+    test("rejects venue exceeding 200 characters and location exceeding 1000 characters", () => {
+      const resLongVenue = createEventSchema.safeParse({
+        title: "Campus Tech Fest 2027",
+        description: "A grand inter-college tech symposium with workshops and hackathons.",
+        eventDate: "2027-05-15",
+        startTime: "10:00",
+        endTime: "13:00",
+        venue: "V".repeat(201),
+        location: "https://maps.google.com/?q=MIT",
+        technical: [{ name: "Hackathon", limit: 20 }],
+        paid: false,
+      });
+      assert.equal(resLongVenue.success, false);
+
+      const resLongLoc = createEventSchema.safeParse({
+        title: "Campus Tech Fest 2027",
+        description: "A grand inter-college tech symposium with workshops and hackathons.",
+        eventDate: "2027-05-15",
+        startTime: "10:00",
+        endTime: "13:00",
+        venue: "MIT Auditorium",
+        location: "https://maps.google.com/?" + "q=".repeat(500),
+        technical: [{ name: "Hackathon", limit: 20 }],
+        paid: false,
+      });
+      assert.equal(resLongLoc.success, false);
     });
   });
 });

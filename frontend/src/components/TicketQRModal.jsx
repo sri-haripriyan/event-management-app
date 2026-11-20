@@ -209,9 +209,22 @@ const TicketQRModal = ({ isOpen, onClose, event, currentUser }) => {
                 <span className="material-symbols-outlined text-base">pin_drop</span>
                 Venue
               </span>
-              <span className="font-semibold truncate max-w-[200px]">
-                {event.location || "ACN. Hall Studio"}
-              </span>
+              <div className="flex items-center gap-1.5 max-w-[200px]">
+                <span className="font-semibold truncate">
+                  {event.venue || event.location || "ACN. Hall Studio"}
+                </span>
+                {event.location && event.location.startsWith("http") && (
+                  <a
+                    href={event.location}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="View on Google Maps"
+                    className="text-primary-container hover:text-primary transition shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  </a>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
