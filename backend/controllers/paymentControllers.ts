@@ -58,9 +58,14 @@ export const getPaymentSummary = async (req: any, res: any) => {
 		// Check already paid sub-events for this user in this event
 		const userId = req.user?._id;
 		const userPayments = userId
-			? await Payment.find({ eventId, userId }).select("groupId").lean()
+			? await Payment.find({ eventId, userId }).select("groupId groupIds").lean()
 			: [];
-		const paidGroupIds = userPayments.map((p: any) => p.groupId?.toString());
+		const paidGroupIds = userPayments
+			.flatMap((p: any) => [
+				p.groupId?.toString(),
+				...(Array.isArray(p.groupIds) ? p.groupIds.map((g: any) => g?.toString()) : []),
+			])
+			.filter(Boolean);
 
 		const unitPrice = Number(event.amount) || 0;
 		const isPaidEvent = Boolean(event.paid);
@@ -216,40 +221,76 @@ export const verifyPayment = async (req: any, res: any) => {
 	} = req.body;
 
 	try {
+		let targetGroupIds: string[] = [];
+		if (Array.isArray(groupIds) && groupIds.length > 0) {
+			targetGroupIds = groupIds;
+		} else if (groupId) {
+			targetGroupIds = [groupId];
+		}
+
 		const userId = req.user._id;
 		const secret = (process.env.RAZORPAY_KEY_SECRET || "rzp_placeholder_secret") as string;
 		const hmac = crypto.createHmac("sha256", secret);
 		hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
 		const generated_signature = hmac.digest("hex");
 
-		if (generated_signature === razorpay_signature) {
-			let targetGroupIds: string[] = [];
-			if (Array.isArray(groupIds) && groupIds.length > 0) {
-				targetGroupIds = groupIds;
-			} else if (groupId) {
-				targetGroupIds = [groupId];
+		// Timing-safe comparison to prevent timing side-channel attacks
+		const generatedBuffer = Buffer.from(generated_signature);
+		const signatureBuffer = Buffer.from(
+			typeof razorpay_signature === "string" ? razorpay_signature : ""
+		);
+		const isSignatureValid =
+			generatedBuffer.length === signatureBuffer.length &&
+			crypto.timingSafeEqual(generatedBuffer, signatureBuffer);
+
+		if (!isSignatureValid) {
+			return res.status(400).json({ message: "Payment signature verification failed" });
+		}
+
+		// Idempotency check: if Payment with this razorpayPaymentId already exists, return existing result
+		const existingPayment = await Payment.findOne({ razorpayPaymentId: razorpay_payment_id });
+		if (existingPayment) {
+			return res.status(200).json({
+				message: "Payment verified successfully",
+				count: targetGroupIds.length,
+			});
+		}
+
+		if (isSignatureValid) {
+			// Find event to determine server-side price
+			let orderAmount = 0;
+			if (eventId && mongoose.connection.readyState !== 0) {
+				try {
+					const ev = await Event.findById(eventId).select("amount paid").lean();
+					if (ev && (ev as any).paid) {
+						orderAmount = (Number((ev as any).amount) || 0) * targetGroupIds.length;
+					}
+				} catch (_) {}
 			}
 
-			for (const gid of targetGroupIds) {
-				const existingPayment = await Payment.findOne({
-					groupId: gid,
+			// Create payment record once (idempotent & unique per razorpayPaymentId)
+			let savedPayment: any = await Payment.findOne({
+				razorpayPaymentId: razorpay_payment_id,
+			});
+
+			if (!savedPayment && targetGroupIds.length > 0) {
+				const primaryGroupId = targetGroupIds[0];
+				const payment = new Payment({
+					groupId: primaryGroupId,
+					groupIds: targetGroupIds,
 					userId,
 					eventId,
 					razorpayOrderId: razorpay_order_id,
+					razorpayPaymentId: razorpay_payment_id,
+					razorpaySignature: razorpay_signature,
+					status: "paid",
+					amount: orderAmount,
+					currency: "INR",
 				});
+				savedPayment = await payment.save();
+			}
 
-				if (!existingPayment) {
-					const payment = new Payment({
-						groupId: gid,
-						userId,
-						eventId,
-						razorpayOrderId: razorpay_order_id,
-						razorpayPaymentId: razorpay_payment_id,
-						razorpaySignature: razorpay_signature,
-					});
-					await payment.save();
-				}
-
+			for (const gid of targetGroupIds) {
 				const group = await Group.findById(gid);
 				if (group) {
 					if (!group.members.some((m: any) => m?.toString() === userId.toString())) {
@@ -267,9 +308,19 @@ export const verifyPayment = async (req: any, res: any) => {
 							eventId,
 							userId,
 							appliedTo: subeventName,
+							paymentId: savedPayment?._id,
 						});
 						logger.info("Created application for subevent: " + application);
+					} else if (!application.paymentId && savedPayment?._id) {
+						application.paymentId = savedPayment._id;
+						await application.save();
 					}
+
+					if (savedPayment && !savedPayment.applicationId) {
+						savedPayment.applicationId = application._id;
+						await savedPayment.save();
+					}
+
 					await addEmailToQueue(application._id.toString());
 
 					// Create registration notification
@@ -311,14 +362,131 @@ export const verifyEventApplied = async (req: any, res: any) => {
 			eventId: eventId,
 			userId: req.user._id,
 		})
-			.select("groupId")
+			.select("groupId groupIds")
 			.populate("groupId", "name")
+			.populate("groupIds", "name")
 			.lean();
 
-		const groupIds = events.map((event: any) => event.groupId);
+		const groupIds = events
+			.flatMap((event: any) => [
+				event.groupId,
+				...(Array.isArray(event.groupIds) ? event.groupIds : []),
+			])
+			.filter(Boolean);
 		res.status(200).json({ groupIds });
 	} catch (error: any) {
 		logger.error("verifyEventApplied error", error);
 		res.status(500).json({ error: error.message });
+	}
+};
+
+/**
+ * Fetch complete payment history for an event.
+ * Accessible by event hosts (creators), platform admins, and event track moderators.
+ * Returns attendee username, email, phone number, subevent registered to, amount, and transactionId.
+ */
+export const getEventPaymentHistory = async (req: any, res: any) => {
+	try {
+		const eventId = req.params?.eventId || req.query?.eventId;
+		if (!eventId) {
+			return res.status(400).json({ message: "eventId is required", error: "Missing eventId" });
+		}
+
+		const event = await Event.findById(eventId);
+		if (!event) {
+			return res.status(404).json({ message: "Event not found", error: "Event not found" });
+		}
+
+		const userId = req.user?._id?.toString();
+		const eventCreatorId = (event.userId?._id || event.userId)?.toString();
+		const isCreator = Boolean(eventCreatorId && eventCreatorId === userId);
+		const isSuperAdmin = req.user?.role === "admin";
+
+		let isAuthorized = isCreator || isSuperAdmin;
+		if (!isAuthorized) {
+			const groups = await Group.find({ eventId });
+			const isGroupAdminOrMod = (groups || []).some((g: any) => {
+				const adminId = (g?.admin?._id || g?.admin)?.toString();
+				const mods = (g?.moderators || []).map((m: any) => (m?._id || m)?.toString());
+				return (adminId && adminId === userId) || mods.includes(userId);
+			});
+			isAuthorized = isGroupAdminOrMod;
+		}
+
+		if (!isAuthorized) {
+			return res.status(403).json({
+				message: "Access denied. Only event hosts and moderators can view payment history.",
+				error: "Forbidden",
+			});
+		}
+
+		let query: any = Payment.find({ eventId });
+		if (typeof query?.populate === "function") {
+			query = query
+				.populate("userId", "userName email phone profile_image_url")
+				.populate("groupId", "name")
+				.populate("groupIds", "name")
+				.sort({ createdAt: -1 });
+		}
+		if (typeof query?.lean === "function") {
+			query = query.lean();
+		}
+		const payments = await query;
+		const list = Array.isArray(payments) ? payments : [];
+
+		const formattedPayments = list.map((p: any) => {
+			let subEvents: string[] = [];
+			if (Array.isArray(p.groupIds) && p.groupIds.length > 0) {
+				subEvents = p.groupIds
+					.map((g: any) => (typeof g === "object" ? g?.name : g))
+					.filter(Boolean);
+			} else if (p.groupId) {
+				const gName = typeof p.groupId === "object" ? p.groupId?.name : p.groupId;
+				if (gName) subEvents = [gName];
+			}
+			const subevent = subEvents.length > 0 ? subEvents.join(", ") : "General Registration";
+
+			const amount =
+				p.amount !== undefined && p.amount !== null
+					? Number(p.amount)
+					: Number(event.amount) || 0;
+
+			return {
+				_id: p._id,
+				username: p.userId?.userName || "Unknown User",
+				email: p.userId?.email || "N/A",
+				phone: p.userId?.phone || "N/A",
+				userProfileImage: p.userId?.profile_image_url || null,
+				userId: p.userId?._id || p.userId || null,
+				subevent,
+				subEvents,
+				amount,
+				currency: p.currency || "INR",
+				transactionId: p.razorpayPaymentId || "N/A",
+				orderId: p.razorpayOrderId || "N/A",
+				status: p.status || "paid",
+				createdAt: p.createdAt || new Date(),
+			};
+		});
+
+		const totalRevenue = formattedPayments.reduce(
+			(acc, curr) => acc + (Number(curr.amount) || 0),
+			0
+		);
+
+		return res.status(200).json({
+			success: true,
+			count: formattedPayments.length,
+			totalRevenue,
+			eventTitle: event.title,
+			currency: "INR",
+			payments: formattedPayments,
+		});
+	} catch (error: any) {
+		logger.error("getEventPaymentHistory error", error);
+		return res.status(500).json({
+			message: "Failed to fetch payment history",
+			error: error.message,
+		});
 	}
 };

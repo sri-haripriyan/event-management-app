@@ -20,6 +20,9 @@ const groupSchema = new mongoose.Schema(
 	}
 );
 
+groupSchema.index({ eventId: 1 });
+groupSchema.index({ admin: 1 });
+
 const Group = mongoose.model("Group", groupSchema);
 
 export default Group;

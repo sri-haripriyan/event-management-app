@@ -98,9 +98,53 @@ const eventSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    startAt: {
+      type: Date,
+      default: null,
+    },
+    endAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
+
+eventSchema.index({ userId: 1 });
+eventSchema.index({ eventDate: 1 });
+
+export const computeEventDates = (event: any) => {
+  if (
+    event.eventDate &&
+    event.startTime &&
+    /^\d{4}-\d{2}-\d{2}$/.test(event.eventDate) &&
+    /^\d{2}:\d{2}$/.test(event.startTime)
+  ) {
+    const startIso = `${event.eventDate}T${event.startTime}:00+05:30`;
+    const start = new Date(startIso);
+    if (!isNaN(start.getTime())) {
+      event.startAt = start;
+    }
+  }
+
+  if (
+    event.eventDate &&
+    event.endTime &&
+    /^\d{4}-\d{2}-\d{2}$/.test(event.eventDate) &&
+    /^\d{2}:\d{2}$/.test(event.endTime)
+  ) {
+    const endIso = `${event.eventDate}T${event.endTime}:00+05:30`;
+    const end = new Date(endIso);
+    if (!isNaN(end.getTime())) {
+      event.endAt = end;
+    }
+  }
+};
+
+eventSchema.pre("save", function (next) {
+  computeEventDates(this);
+  next();
+});
 
 const Event = mongoose.model("Event", eventSchema);
 

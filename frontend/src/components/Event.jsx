@@ -8,6 +8,7 @@ import { useAuth } from "../hooks/useAuth";
 import Avatar from "./Avatar";
 import { FaHeart } from "react-icons/fa";
 import { FiCalendar } from "react-icons/fi";
+import { getEventTimeStatus } from "../utils/time";
 
 const formatEventDateTime = (dateStr, timeStr) => {
 	if (!dateStr) return "No date";
@@ -60,10 +61,11 @@ const Event = ({ event, toDisplay }) => {
 	};
 
 	// Compute status overlay badge
+	const timeStatus = getEventTimeStatus(event);
 	let statusBadge = null;
 	if (event?.title?.toLowerCase().includes("hackathon")) {
 		statusBadge = { text: "SOLD OUT", type: "soldout" };
-	} else if (event?.title?.toLowerCase().includes("test1") || event?.title?.toLowerCase().includes("live")) {
+	} else if (timeStatus.isLive || event?.title?.toLowerCase().includes("test1") || event?.title?.toLowerCase().includes("live")) {
 		statusBadge = { text: "LIVE", type: "live" };
 	}
 

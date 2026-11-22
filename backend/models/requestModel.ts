@@ -23,6 +23,7 @@ const joinRequestSchema = new mongoose.Schema(
 );
 
 joinRequestSchema.index({ user: 1, group: 1 }, { unique: true });
+joinRequestSchema.index({ group: 1, status: 1 });
 
 const JoinRequest = mongoose.model("JoinRequest", joinRequestSchema);
 

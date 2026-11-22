@@ -8,6 +8,7 @@ import { CiEdit } from "react-icons/ci";
 import { IoShareSocialOutline } from "react-icons/io5";
 import { deleteEvent } from "../services/api";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { isEventLive } from "../utils/time";
 
 const EventOptions = ({ event, subEventGroups = [] }) => {
 	const { user } = useAuth();
@@ -111,12 +112,14 @@ const EventOptions = ({ event, subEventGroups = [] }) => {
 									<span className="material-symbols-outlined text-base">group</span> Requests
 								</div>
 							)}
-							<div
-								onClick={() => navigate(`/events/${event?._id}/attendance`)}
-								className="hover:shadow-md cursor-pointer duration-200 text-primary-container px-2 py-1 rounded-sm flex items-center gap-1.5 text-xs font-semibold"
-							>
-								<span className="material-symbols-outlined text-base">qr_code_scanner</span> Attendance
-							</div>
+							{isEventLive(event) && (
+								<div
+									onClick={() => navigate(`/events/${event?._id}/attendance`)}
+									className="hover:shadow-md cursor-pointer duration-200 text-primary-container px-2 py-1 rounded-sm flex items-center gap-1.5 text-xs font-semibold"
+								>
+									<span className="material-symbols-outlined text-base">qr_code_scanner</span> Attendance
+								</div>
+							)}
 						</div>
 					)}
 

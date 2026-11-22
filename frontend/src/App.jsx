@@ -52,6 +52,10 @@ const App = () => {
                 <Route path="/events/:eventId/edit" element={<EditEvents />} />
                 <Route path="/events/:eventId/settings" element={<ManageEvent />} />
                 <Route path="/events/:id/settings" element={<ManageEvent />} />
+                <Route path="/events/:eventId/settings/view=payments" element={<ManageEvent />} />
+                <Route path="/events/:id/settings/view=payments" element={<ManageEvent />} />
+                <Route path="/event/settings/view=payments" element={<ManageEvent />} />
+                <Route path="/event/settings" element={<ManageEvent />} />
                 <Route path="/events/:eventId/manage" element={<ManageEvent />} />
                 <Route path="/events/:id/manage" element={<ManageEvent />} />
                 <Route path="/dashboard" element={<Dashboard />} />
