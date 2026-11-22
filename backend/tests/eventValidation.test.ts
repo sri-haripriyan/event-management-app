@@ -1,7 +1,7 @@
 import test, { describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import mongoose from "mongoose";
-import Event from "../models/eventModel.js";
+import Event, { computeEventDates } from "../models/eventModel.js";
 import Group from "../models/groupModel.js";
 import Application from "../models/applicationModel.js";
 import Comment from "../models/commentModel.js";
@@ -10,6 +10,7 @@ import Notification from "../models/notificationModel.js";
 import Payment from "../models/paymentModel.js";
 import Message from "../models/messageModel.js";
 import JoinRequest from "../models/requestModel.js";
+import User from "../models/userModel.js";
 import {
   createEventSchema,
   validateImageFile,
@@ -686,6 +687,96 @@ describe("Event Validation & Controller Security Unit Tests", () => {
         paid: false,
       });
       assert.equal(resLongLoc.success, false);
+    });
+  });
+
+  describe("9. Schema Improvements & Additive Enhancements", () => {
+    test("Event model computes startAt and endAt in IST (+05:30) via pre-save hook", async () => {
+      const eventDoc = new Event({
+        title: "IST Hackathon 2027",
+        description: "A 24h coding marathon celebrating technology and developers everywhere.",
+        imageUrl: "https://example.com/poster.jpg",
+        userId: mockUserId,
+        eventDate: "2027-06-20",
+        startTime: "10:30",
+        endTime: "14:30",
+        paid: false,
+      });
+
+      // Compute dates using the pre-save hook helper
+      computeEventDates(eventDoc);
+
+      // 10:30 IST is 05:00 UTC (10:30 - 5:30 = 05:00)
+      assert.ok(eventDoc.startAt instanceof Date);
+      assert.equal(eventDoc.startAt.toISOString(), "2027-06-20T05:00:00.000Z");
+
+      // 14:30 IST is 09:00 UTC (14:30 - 5:30 = 09:00)
+      assert.ok(eventDoc.endAt instanceof Date);
+      assert.equal(eventDoc.endAt.toISOString(), "2027-06-20T09:00:00.000Z");
+
+      // Original string fields remain untouched
+      assert.equal(eventDoc.eventDate, "2027-06-20");
+      assert.equal(eventDoc.startTime, "10:30");
+      assert.equal(eventDoc.endTime, "14:30");
+    });
+
+    test("Application model supports optional paymentId and has required indexes", () => {
+      const app = new Application({
+        eventId: new mongoose.Types.ObjectId(),
+        userId: mockUserId,
+        appliedTo: "Web Development",
+        paymentId: new mongoose.Types.ObjectId(),
+      });
+      assert.ok(app.paymentId);
+
+      const indexes = Application.schema.indexes();
+      const hasEventIdIndex = indexes.some(([spec]) => spec.eventId === 1 && Object.keys(spec).length === 1);
+      const hasCompoundUniqueIndex = indexes.some(
+        ([spec, opts]) => spec.eventId === 1 && spec.userId === 1 && spec.appliedTo === 1 && opts?.unique === true
+      );
+      assert.equal(hasEventIdIndex, true);
+      assert.equal(hasCompoundUniqueIndex, true);
+    });
+
+    test("User model sets isHost default to false and validates roleType enum", () => {
+      const defaultUser = new User({
+        userName: "testuser1",
+        email: "testuser1@example.com",
+        password: "hashedpassword123",
+      });
+      assert.equal(defaultUser.isHost, false);
+      assert.equal(defaultUser.roleType, "");
+
+      const studentUser = new User({
+        userName: "student1",
+        email: "student1@example.com",
+        password: "hashedpassword123",
+        roleType: "Student",
+      });
+      const errStudent = studentUser.validateSync();
+      assert.equal(errStudent, undefined);
+
+      const invalidRoleUser = new User({
+        userName: "invalid1",
+        email: "invalid1@example.com",
+        password: "hashedpassword123",
+        roleType: "InvalidRoleName",
+      });
+      const errInvalid = invalidRoleUser.validateSync();
+      assert.ok(errInvalid);
+      assert.ok(errInvalid?.errors["roleType"]);
+    });
+
+    test("Group and JoinRequest schemas have required indexes defined", () => {
+      const groupIndexes = Group.schema.indexes();
+      const hasEventIdIndex = groupIndexes.some(([spec]) => spec.eventId === 1);
+      const hasAdminIndex = groupIndexes.some(([spec]) => spec.admin === 1);
+      assert.equal(hasEventIdIndex, true);
+      assert.equal(hasAdminIndex, true);
+
+      const reqIndexes = JoinRequest.schema.indexes();
+      const hasGroupStatusIndex = reqIndexes.some(([spec]) => spec.group === 1 && spec.status === 1);
+      assert.equal(hasGroupStatusIndex, true);
     });
   });
 });

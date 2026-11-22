@@ -213,6 +213,12 @@ export const sendMessage = (message, groupId) =>
   );
 
 
+export const getEventPaymentHistory = async (eventId) => {
+  return axios
+    .get(`${BASE_URL}/api/payment/history/${eventId}`, { withCredentials: true })
+    .then((res) => res.data);
+};
+
 export const getPaymentSummary = async ({ eventId, groupIds }) => {
   const ids = Array.isArray(groupIds) ? groupIds.join(",") : (groupIds || "");
   return axios

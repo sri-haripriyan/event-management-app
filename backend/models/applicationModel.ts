@@ -39,9 +39,16 @@ const applicationSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
+		paymentId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Payment",
+		},
 	},
 	{ timestamps: true }
 );
+
+applicationSchema.index({ eventId: 1 });
+applicationSchema.index({ eventId: 1, userId: 1, appliedTo: 1 }, { unique: true });
 
 const Application = mongoose.model("Application", applicationSchema);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -19,7 +19,7 @@ import {
   FiLogIn,
   FiX,
 } from "react-icons/fi";
-import { formatTimestamp } from "../utils/time.js";
+import { formatTimestamp, getEventTimeStatus } from "../utils/time.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import Avatar from "./Avatar.jsx";
 import Spinner from "./Spinner";
@@ -37,6 +37,22 @@ const EventSection = ({ event }) => {
   const { user } = useAuth();
   const [selectedGroupIds, setSelectedGroupIds] = useState([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Real-time clock to reactively update live status without manual page refresh
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 15000); // Check every 15 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const eventTimeStatus = useMemo(
+    () => getEventTimeStatus(event, currentTime),
+    [event, currentTime]
+  );
+  const isLive = eventTimeStatus.isLive;
 
   // Fetch groups for this event
   const { data: subEventGroups } = useQuery({
@@ -519,6 +535,22 @@ const EventSection = ({ event }) => {
 
             {/* Meta Tags */}
             <div className="flex flex-wrap items-center gap-4 text-on-surface-variant text-sm">
+              {isLive ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 shadow-sm animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" />
+                  Live Now
+                </div>
+              ) : eventTimeStatus.hasEnded ? (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-surface-container-lowest text-on-surface-variant border border-outline-variant/30 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/50" />
+                  Concluded
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Upcoming
+                </div>
+              )}
               <div className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-full border border-outline-variant/30 shadow-sm">
                 <FiCalendar className="text-primary-container" />
                 <span>{event?.eventDate}</span>
@@ -552,6 +584,12 @@ const EventSection = ({ event }) => {
 
           {/* Event Image */}
           <div className="relative w-full rounded-2xl overflow-hidden aspect-video border border-outline-variant/30 shadow-md">
+            {isLive && (
+              <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-rose-600 text-white shadow-md">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                Live Now
+              </div>
+            )}
             <div className="relative w-full h-full">
               <img
                 src={event?.imageUrl}
@@ -790,29 +828,31 @@ const EventSection = ({ event }) => {
                 Event Inclusions
               </h4>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.swags
-                    ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
-                    : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
-                    }`}
-                >
-                  <FiGift size={16} />
-                  <span>Swags {event?.swags ? "Included" : "None"}</span>
-                </div>
+              {event?.swags || event?.refreshments ?
+                <div className="grid grid-cols-2 gap-3">
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.swags
+                      ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
+                      : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
+                      }`}
+                  >
+                    <FiGift size={16} />
+                    <span>Swags {event?.swags ? "Included" : "None"}</span>
+                  </div>
 
-                <div
-                  className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.refreshments
-                    ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
-                    : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
-                    }`}
-                >
-                  <FiCoffee size={16} />
-                  <span>
-                    Refreshments {event?.refreshments ? "Included" : "None"}
-                  </span>
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold ${event?.refreshments
+                      ? "bg-primary-container/10 border-primary-container/20 text-primary-container"
+                      : "bg-surface-container-low border-outline-variant/20 text-on-surface-variant/70"
+                      }`}
+                  >
+                    <FiCoffee size={16} />
+                    <span>
+                      Refreshments {event?.refreshments ? "Included" : "None"}
+                    </span>
+                  </div>
                 </div>
-              </div>
+                : <div className="text-xs font-semibold text-on-surface-variant">No Swags / Refreshments provided</div>}
             </div>
 
             {/* Attendance & Organizer Quick link (for event creator/admin and its moderators) */}
@@ -841,13 +881,24 @@ const EventSection = ({ event }) => {
                     <span>Manage Join Requests</span>
                   </Link>
                 )}
-                <Link
-                  to={`/events/${event?._id}/attendance`}
-                  className="w-full text-center bg-primary-container hover:bg-surface-tint text-on-primary font-semibold py-3 rounded-xl transition duration-200 shadow-md shadow-primary-container/20 flex items-center justify-center gap-2 text-sm"
-                >
-                  <span className="material-symbols-outlined text-lg">qr_code_scanner</span>
-                  <span>Proceed to Attendance</span>
-                </Link>
+                {isLive ? (
+                  <Link
+                    to={`/events/${event?._id}/attendance`}
+                    className="w-full text-center bg-primary-container hover:bg-surface-tint text-on-primary font-semibold py-3 rounded-xl transition duration-200 shadow-md shadow-primary-container/20 flex items-center justify-center gap-2 text-sm animate-fade-in"
+                  >
+                    <span className="material-symbols-outlined text-lg">qr_code_scanner</span>
+                    <span>Proceed to Attendance</span>
+                  </Link>
+                ) : (
+                  <div className="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+                    <FiClock className="text-primary-container shrink-0" size={15} />
+                    <span>
+                      {eventTimeStatus.hasEnded
+                        ? "Event has ended. Attendance scanner is closed."
+                        : `Attendance scanner will open once the event goes live${event?.startTime ? ` at ${event.startTime}` : ""}.`}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 

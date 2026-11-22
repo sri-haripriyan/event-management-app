@@ -325,7 +325,7 @@ const PaymentPage = () => {
 
           <div className="pt-2 flex flex-col sm:flex-row gap-3">
             <button
-              onClick={() => navigate("/my-tickets")}
+              onClick={() => navigate("/myTickets")}
               className="flex-1 py-3 rounded-xl bg-primary-container hover:bg-surface-tint text-on-primary font-semibold text-sm shadow-md shadow-primary-container/20 transition active:scale-[0.99]"
             >
               View My Tickets

@@ -34,9 +34,13 @@ const userSchema = new mongoose.Schema(
     profile_file_id: {
       type: String,
     },
-    isHost: { type: Boolean },
+    isHost: { type: Boolean, default: false },
     phone: { type: String, default: "" },
-    roleType: { type: String, default: "" },
+    roleType: {
+      type: String,
+      enum: ["", "Student", "Lecturer", "Professional"],
+      default: "",
+    },
     college: { type: String, default: "" },
     state: { type: String, default: "" },
     district: { type: String, default: "" },
