@@ -16,6 +16,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import ticketRoutes from "./routes/ticketRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import healthRoutes from "./routes/healthRoutes.js";
 
 import connectDB from "./configs/connectDB.js";
 import { app, server, io } from "./socket/socket.js";
@@ -70,15 +71,15 @@ app.use(
   )
 );
 
-// Routes
+// Health check endpoints (accessible at /health, /healthcheck, /api/health, /api/healthcheck)
+app.use("/health", healthRoutes);
+app.use("/healthcheck", healthRoutes);
+app.use("/api/health", healthRoutes);
+app.use("/api/healthcheck", healthRoutes);
+
+// Static files
 app.use(express.static(path.join(process.cwd(), "dist")));
 
-app.get("*", (req, res, next) => {
-  if (req.originalUrl.startsWith("/api")) {
-    return next();
-  }
-  res.sendFile(path.join(process.cwd(), "dist", "index.html"));
-});
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/comment", commentRoutes);
@@ -93,8 +94,15 @@ app.use("/api/attendance", ticketRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/notification", notificationRoutes);
 
+app.get("*", (req, res, next) => {
+  if (req.originalUrl.startsWith("/api")) {
+    return next();
+  }
+  res.status(404).send("Invalid route")
+});
+
 // Error Handling
-app.use((err, req, res, next) => {
+app.use((err: any, req: any, res: any, next: any) => {
   logger.error(`Error: ${err.message}`);
   res.status(500).json({ error: "Internal Server Error" });
 });
